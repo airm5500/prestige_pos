@@ -19,7 +19,7 @@ void main() {
 
 // ======= Config & Session =======
 final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
-//TEST COMMIT
+//TEST COMMIT 2
 class AppConfig {
   static const defaultTypeVenteId = '1'; // AU COMPTANT
   static const defaultNatureVenteId = '1'; // PRESCRIPTION
