@@ -5,7 +5,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/auth/service/auth_service.dart';
+import 'package:prestige_pos/auth/service/meta_data_service.dart';
+import 'package:prestige_pos/auth/service/vente_service.dart';
+import 'package:prestige_pos/ui/login/login_screen.dart';
+import 'package:prestige_pos/ui/vente/vente_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
@@ -14,20 +19,25 @@ import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
 import 'package:sunmi_printer_plus/enums.dart';
 import 'package:sunmi_printer_plus/sunmi_style.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final apiClient = await ApiClient.init();
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) =>  AuthService()),
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(
+          create: (_) => MetaDataService(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => VenteService(apiClient: apiClient),
+        ),
 
         // Add other providers here if needed
       ],
       child: const MyApp(),
     ),
-
-    //  const MyApp()
   );
 }
 
@@ -575,7 +585,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.teal),
       darkTheme: ThemeData.dark(useMaterial3: true),
-      home: const StartGate(),
+      // home: const StartGate(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const StartGate(), // Default route
+
+        VenteScreen.routeName: (context) => const VenteScreen(),
+
+        // '/sales': (context) => SalesPage(),
+      },
     );
   }
 }
@@ -598,7 +616,7 @@ class _StartGateState extends State<StartGate> {
   Future<void> _bootstrap() async {
     final sp = await SharedPreferences.getInstance();
     appSession.localIp = sp.getString('localIp') ?? '';
-    appSession.remoteIp = sp.getString('remoteIp') ?? '';
+    /* appSession.remoteIp = sp.getString('remoteIp') ?? '';
     appSession.appName = sp.getString('appName') ?? 'laborex';
     appSession.port = sp.getString('port') ?? '8080';
     appSession.useLocal = sp.getBool('useLocal') ?? true;
@@ -609,7 +627,7 @@ class _StartGateState extends State<StartGate> {
     appSession.address = sp.getString('address') ?? '';
 
     appSession.officineNomComplet = sp.getString('officineNomComplet') ?? '';
-    appSession.officineFullName = sp.getString('officineFullName') ?? '';
+    appSession.officineFullName = sp.getString('officineFullName') ?? '';*/
 
     if (appSession.localIp.isEmpty) {
       if (!mounted) return;
@@ -834,14 +852,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 // ======= Login =======
-class LoginScreen extends StatefulWidget {
+/*class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
-}
+}*/
 
-class _LoginScreenState extends State<LoginScreen> {
+/*class _LoginScreenState extends State<LoginScreen> {
   final _loginCtl = TextEditingController();
   final _pwdCtl = TextEditingController();
   final _api = ApiService();
@@ -855,7 +873,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-  //  _init();
+    //  _init();
   }
 
   Future<void> _init() async {
@@ -889,7 +907,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit(AuthService authService) async {
     setState(() => loading = true);
     try {
-      final ok = await _api.login(_loginCtl.text.trim(), _pwdCtl.text,authService);
+      final ok = await _api.login(
+        _loginCtl.text.trim(),
+        _pwdCtl.text,
+        authService,
+      );
       if (!ok) {
         showSnack(context, 'Échec connexion');
       } else {
@@ -920,7 +942,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService =context.watch<AuthService>();
+    final authService = context.watch<AuthService>();
     final officineName = _off?.nomComplet.isNotEmpty == true
         ? _off!.nomComplet
         : (appSession.officineNomComplet.isNotEmpty
@@ -989,10 +1011,8 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: ()=>{
-                  if(!loading){
-                    _submit(authService)
-                  }
+                onPressed: () => {
+                  if (!loading) {_submit(authService)},
                 },
                 icon: const Icon(Icons.login),
                 label: Text(loading ? 'Connexion...' : 'Se connecter'),
@@ -1003,7 +1023,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
+}*/
 
 // ======= Prévente / Vente =======
 class PreventePage extends StatefulWidget {

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:prestige_pos/auth/service/Api_client.dart';
+import 'package:prestige_pos/auth/service/api_client.dart';
 
 typedef SaveToHiveFunction<T> = Future<void> Function(T data);
 typedef SaveListToHiveFunction<T> = Future<void> Function(List<T> data);
@@ -11,8 +11,7 @@ typedef LoadListFromHiveFunction<T> = Future<List<T>?> Function();
 class SharedService {
   late final ApiClient _apiClient;
 
-  SharedService({ApiClient? apiClient})
-    : _apiClient = (apiClient ?? ApiClient.init()) as ApiClient;
+  SharedService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   Future<T?> fetchData<T>({
     required String endpoint,
@@ -29,25 +28,25 @@ class SharedService {
     setError('');
     notifyListenersCallback();
 
-    if (!forceRefresh && loadFromHive != null) {
-      try {
-        final T? localData = await loadFromHive();
-        if (localData != null) {
-          if (kDebugMode) {
-            print("SharedService: Loaded data from Hive for $endpoint");
-          }
+    try {
+      if (!forceRefresh && loadFromHive != null) {
+        try {
+          final T? localData = await loadFromHive();
+          if (localData != null) {
+            if (kDebugMode) {
+              print("SharedService: Loaded data from Hive for $endpoint");
+            }
 
-          return localData;
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print("SharedService: Error loading from Hive for $endpoint: $e");
-          // Continue to fetch from API
+            return localData;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print("SharedService: Error loading from Hive for $endpoint: $e");
+            // Continue to fetch from API
+          }
         }
       }
-    }
 
-    try {
       final String apiUrl = '${_apiClient.getApiUrl()}$endpoint';
       final uri = Uri.parse(apiUrl).replace(
         queryParameters: queryParameters?.isNotEmpty == true
@@ -119,33 +118,36 @@ class SharedService {
     required ValueChanged<bool> setLoading,
     required ValueChanged<String> setError,
     required VoidCallback notifyListenersCallback,
-    // Optional Hive handlers
     LoadListFromHiveFunction<T>? loadListFromHive,
     SaveListToHiveFunction<T>? saveListToHive,
-    bool forceRefresh =
-        false, // If true, skip loading from Hive and always fetch from API
+    bool forceRefresh = false,
   }) async {
     setLoading(true);
     setError('');
     notifyListenersCallback();
 
-    // 1. Try loading list from Hive if a handler is provided and not forcing refresh
-    if (!forceRefresh && loadListFromHive != null) {
-      final List<T>? localListData = await loadListFromHive();
-      if (localListData != null && localListData.isNotEmpty) {
-        // Also check if not empty
-        if (kDebugMode) {
-          print("SharedService: Loaded list from Hive for $endpoint");
-        }
-        // No need to call setLoading(false) here, finally block will do it.
-        // notifyListenersCallback();
-        return localListData;
-      }
-    }
-
-    // 2. Fetch list from API
     try {
+      if (!forceRefresh && loadListFromHive != null) {
+        print("forceRefresh is $forceRefresh");
+        try {
+          final List<T>? localListData = await loadListFromHive();
+          if (localListData != null && localListData.isNotEmpty) {
+            if (kDebugMode) {
+              print("SharedService: Loaded list from Hive for $endpoint");
+            }
+            return localListData;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print(
+              "SharedService: Error loading list from Hive for $endpoint: $e",
+            );
+          }
+        }
+      }
+
       final String apiUrl = '${_apiClient.getApiUrl()}$endpoint';
+      print('API URL: $apiUrl');
       final Uri uri = Uri.parse(apiUrl).replace(
         queryParameters: queryParameters?.isEmpty ?? true
             ? null
@@ -154,17 +156,13 @@ class SharedService {
 
       final http.Response response = await http
           .get(uri, headers: _apiClient.headers)
-          .timeout(
-            const Duration(seconds: 20),
-          ); // Increased timeout slightly for lists
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         if (response.body.isEmpty || response.body.toLowerCase() == 'null') {
-          setError(
-            '',
-          ); // No results found is not necessarily an error for lists
+          setError('');
           final List<T> emptyList = [];
-          // 3a. Save empty list to Hive if a handler is provided (to clear old data)
+
           if (saveListToHive != null) {
             try {
               await saveListToHive(emptyList);
@@ -212,8 +210,6 @@ class SharedService {
             if (itemJson is Map<String, dynamic>) {
               return itemParserFromJson(itemJson);
             } else {
-              // This specific error should ideally not prevent the rest of the list from parsing
-              // or saving, but it's a critical data format issue.
               final formatErrorMsg =
                   'Format de données inattendu pour un élément de la liste.';
               setError(formatErrorMsg);
@@ -221,7 +217,6 @@ class SharedService {
             }
           }).toList();
 
-          // 3c. Save fetched list to Hive
           if (saveListToHive != null) {
             try {
               await saveListToHive(results);
@@ -269,82 +264,6 @@ class SharedService {
     } finally {
       setLoading(false);
       notifyListenersCallback();
-    }
-  }
-
-  Future<http.Response?> postListData({
-    required String endpoint,
-    required List<Map<String, dynamic>>
-    jsonDataList, // List of already JSON-serializable maps
-    required ValueChanged<bool> setLoading,
-    required ValueChanged<String> setError,
-    required VoidCallback notifyListenersCallback,
-    Duration timeoutDuration = const Duration(
-      seconds: 30,
-    ), // Configurable timeout
-  }) async {
-    setLoading(true);
-    setError('');
-    notifyListenersCallback(); // Notify loading started, error cleared
-
-    try {
-      final String apiUrl = '${_apiClient.getApiUrl()}$endpoint';
-      final Uri uri = Uri.parse(apiUrl);
-
-      if (kDebugMode) {
-        print(
-          "SharedService (postListData) POST to $uri with ${jsonDataList.length} items.",
-        );
-      }
-
-      final http.Response response = await http
-          .post(
-            uri,
-            headers: _apiClient.headers, // Use headers from ApiClient
-            body: json.encode(
-              jsonDataList,
-            ), // Encode the list of maps to a JSON array string
-          )
-          .timeout(timeoutDuration);
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        // Not a success status code (2xx)
-        _handleHttpError(response, setError, endpoint, context: "postListData");
-      } else {
-        setError(
-          '${jsonDataList.length} produits synchronisés avec success',
-        ); // Clear any error if the call was successful (2xx)
-      }
-      return response; // Return the response for the caller to process
-    } finally {
-      setLoading(false);
-      notifyListenersCallback(); // Notify loading finished
-    }
-  }
-
-  void _handleHttpError(
-    http.Response response,
-    ValueChanged<String> setError,
-    String endpoint, {
-    String context = "",
-  }) {
-    final String contextMsg = context.isNotEmpty ? "($context) " : "";
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      setError('Non autorisé. Veuillez vérifier vos identifiants.');
-    } else if (response.statusCode == 404 && context != "postListData") {
-      // 404 for list GET is handled differently
-      setError('Ressource non trouvée.');
-    } else if (response.statusCode >= 500) {
-      setError('Erreur du serveur. Veuillez réessayer plus tard.');
-    } else {
-      setError(
-        'Erreur ${contextMsg}lors du chargement des données (Code: ${response.statusCode}).',
-      );
-    }
-    if (kDebugMode) {
-      print(
-        "SharedService ${contextMsg}HTTP Error ${response.statusCode} for $endpoint: ${response.body}",
-      );
     }
   }
 }

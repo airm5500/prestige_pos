@@ -12,14 +12,14 @@ class ServiceStateWrapper<T_SERVICE extends BaseServiceNotifier, T_DATA>
     extends StatelessWidget {
   final T_SERVICE service;
   final T_DATA?
-  data; // The actual data object from the service (e.g., Balance, Tva)
+  data;
   final Widget Function(BuildContext context, T_DATA data) successBuilder;
-  final Widget? emptyDataWidget; // Optional: custom widget for empty state
+  final Widget? emptyDataWidget;
   final String?
-  customEmptyDataMessage; // Optional: custom message for empty state
-  final Widget? loadingWidget; // Optional: custom loading widget
+  customEmptyDataMessage;
+  final Widget? loadingWidget;
   final Widget Function(BuildContext context, String errorMessage)?
-  errorBuilder; // Optional: custom error widget builder
+  errorBuilder;
 
   const ServiceStateWrapper({
     super.key,

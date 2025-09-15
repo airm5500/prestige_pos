@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:prestige_pos/auth/service/Api_client.dart';
+import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/ui/login/login_screen.dart';
-
 
 class SettingsScreen extends StatefulWidget {
   final ApiClient apiClient;
@@ -15,7 +13,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late final ApiClient apiClient;
   final _localCtl = TextEditingController();
   final _remoteCtl = TextEditingController();
   final _appCtl = TextEditingController();
@@ -23,8 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _phoneCtl = TextEditingController();
   final _addrCtl = TextEditingController();
 
-  void showSnack(BuildContext context, String msg) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   bool isRemote = false;
   String pingLocal = '';
   String pingRemote = '';
@@ -32,32 +27,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    apiClient = widget.apiClient;
     _load();
   }
 
+  @override
+  void dispose() {
+    _localCtl.dispose();
+    _remoteCtl.dispose();
+    _appCtl.dispose();
+    _portCtl.dispose();
+    _phoneCtl.dispose();
+    _addrCtl.dispose();
+    super.dispose();
+  }
+
+  void showSnack(BuildContext context, String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
   Future<void> _load() async {
-    _localCtl.text = apiClient.localIp ?? '';
-    _remoteCtl.text = apiClient.remoteIp ?? '';
-    _appCtl.text = 'proxy';
-    _portCtl.text = (apiClient.port != null)
-        ? apiClient.port.toString()
+    _localCtl.text = widget.apiClient.localIp ?? '';
+    _remoteCtl.text = widget.apiClient.remoteIp ?? '';
+    _appCtl.text = widget.apiClient.appName ?? 'proxy';
+    _portCtl.text = (widget.apiClient.port != null)
+        ? widget.apiClient.port.toString()
         : '8780';
-    isRemote = apiClient.isRemote ;
-    setState(() {});
+    _phoneCtl.text = widget.apiClient.phone ?? '';
+    _addrCtl.text = widget.apiClient.address ?? '';
+    setState(() {
+      isRemote = widget.apiClient.isRemote;
+    });
   }
 
   Future<String> _ping(String ip) async {
     if (ip.isEmpty) return 'Adresse vide';
-    final base = 'http://$ip:${_portCtl.text}/${_appCtl.text}/api/v1'; //TODO ping healcheck
-    final url = Uri.parse('$base/vente/cheick-caisse');
-    final sw = Stopwatch()
-      ..start();
+    final base = 'http://$ip:${_portCtl.text}/${_appCtl.text}/api/v1';
+    final url = Uri.parse(
+      '$base/vente/cheick-caisse',
+    ); // TODO: Use a proper health check endpoint
+    final sw = Stopwatch()..start();
     try {
       final r = await http.get(url).timeout(const Duration(seconds: 4));
       sw.stop();
       final ok =
-      (r.statusCode == 200 || r.statusCode == 401 || r.statusCode == 403);
+          (r.statusCode == 200 || r.statusCode == 401 || r.statusCode == 403);
       return ok
           ? 'OK (${sw.elapsedMilliseconds} ms)'
           : 'KO (HTTP ${r.statusCode})';
@@ -68,22 +80,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _save() async {
-    // Ping auto avant sauvegarde
-    if (_localCtl.text.isNotEmpty) pingLocal = await _ping(_localCtl.text);
-    if (_remoteCtl.text.isNotEmpty) pingRemote = await _ping(_remoteCtl.text);
+    // Auto-ping before saving
+    if (_localCtl.text.isNotEmpty) {
+      pingLocal = await _ping(_localCtl.text);
+    }
+    if (_remoteCtl.text.isNotEmpty) {
+      pingRemote = await _ping(_remoteCtl.text);
+    }
     setState(() {});
 
-    apiClient.localIp = _localCtl.text.trim();
-    apiClient.remoteIp = _remoteCtl.text.trim();
-    // apiClient.appName = _appCtl.text.trim();
-    apiClient.port = int.tryParse(_portCtl.text.trim()) ?? 8780;
-    apiClient.isRemote = isRemote;
+    widget.apiClient.localIp = _localCtl.text.trim();
+    widget.apiClient.remoteIp = _remoteCtl.text.trim();
+    widget.apiClient.appName = _appCtl.text.trim();
+    widget.apiClient.port = int.tryParse(_portCtl.text.trim()) ?? 8780;
+    widget.apiClient.isRemote = isRemote;
+    widget.apiClient.phone = _phoneCtl.text.trim();
+    widget.apiClient.address = _addrCtl.text.trim();
 
     if (!mounted) return;
     showSnack(context, 'Configuration enregistrée');
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
+  Widget _buildIpInputRow({
+    required TextEditingController controller,
+    required String label,
+    required String pingResult,
+    required String resultPrefix,
+    required VoidCallback onPingPressed,
+  }) {
+    final bool isOk = pingResult.startsWith('OK');
+    final Color resultColor = isOk ? Colors.green : Colors.red;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                decoration: InputDecoration(labelText: label),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(onPressed: onPingPressed, child: const Text('Ping')),
+          ],
+        ),
+        if (pingResult.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              '$resultPrefix: $pingResult',
+              style: TextStyle(fontSize: 12, color: resultColor),
+            ),
+          ),
+      ],
     );
   }
 
@@ -95,67 +150,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _localCtl,
-                    decoration: const InputDecoration(
-                      labelText: 'Adresse IP Locale (requis)',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () async {
-                    pingLocal = '...';
-                    setState(() {});
-                    pingLocal = await _ping(_localCtl.text);
-                    setState(() {});
-                  },
-                  child: const Text('Ping'),
-                ),
-              ],
+            _buildIpInputRow(
+              controller: _localCtl,
+              label: 'Adresse IP Locale (requis)',
+              pingResult: pingLocal,
+              resultPrefix: 'Local',
+              onPingPressed: () async {
+                setState(() => pingLocal = '...');
+                final result = await _ping(_localCtl.text);
+                setState(() => pingLocal = result);
+              },
             ),
-            if (pingLocal.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text(
-                  'Local: $pingLocal',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _remoteCtl,
-                    decoration: const InputDecoration(
-                      labelText: 'Adresse IP Distante',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () async {
-                    pingRemote = '...';
-                    setState(() {});
-                    pingRemote = await _ping(_remoteCtl.text);
-                    setState(() {});
-                  },
-                  child: const Text('Ping'),
-                ),
-              ],
+            _buildIpInputRow(
+              controller: _remoteCtl,
+              label: 'Adresse IP Distante',
+              pingResult: pingRemote,
+              resultPrefix: 'Distant',
+              onPingPressed: () async {
+                setState(() => pingRemote = '...');
+                final result = await _ping(_remoteCtl.text);
+                setState(() => pingRemote = result);
+              },
             ),
-            if (pingRemote.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text(
-                  'Distant: $pingRemote',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
             const SizedBox(height: 12),
             TextField(
               controller: _appCtl,
@@ -186,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SwitchListTile(
               title: const Text('Utiliser le mode Local (sinon Distant)'),
               value: !isRemote,
-              onChanged: (v) => setState(() => isRemote = v),
+              onChanged: (v) => setState(() => isRemote = !v),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(

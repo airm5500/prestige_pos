@@ -25,22 +25,64 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    //  _init();
+    _loadCredentials();
+  }
+
+  @override
+  void dispose() {
+    _loginCtl.dispose();
+    _pwdCtl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCredentials() async {
+    final apiClient = await ApiClient.init();
+    if (apiClient.rememberMe) {
+      setState(() {
+        _loginCtl.text = apiClient.username ?? '';
+        _pwdCtl.text = apiClient.password ?? '';
+        rememberMe = apiClient.rememberMe;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    final apiClient = await ApiClient.init();
+    apiClient.rememberMe = rememberMe;
+    if (rememberMe) {
+      apiClient.username = _loginCtl.text.trim();
+      apiClient.password = _pwdCtl.text.trim();
+    } else {
+      apiClient.username = null;
+      apiClient.password = null;
+    }
   }
 
   Future<void> _performLogin() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final authService = context.read<AuthService>();
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
-      await authService.loginWithJwt(
-        _loginCtl.text.trim(),
-        _pwdCtl.text.trim(),
-      );
+    setState(() {
+      loading = true;
+    });
 
-      if (authService.isAuthenticated && mounted) {
+    final authService = context.read<AuthService>();
+
+    await authService.loginWithJwt(
+      _loginCtl.text.trim(),
+      _pwdCtl.text.trim(),
+    );
+
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
+
+      if (authService.isAuthenticated) {
+        await _saveCredentials();
         Navigator.of(context).pushReplacementNamed(VenteScreen.routeName);
-      } else if (mounted) {
-        // Show error message from authService.errorMessage
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -57,8 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = context.read<AuthService>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Connexion'),
@@ -67,17 +107,14 @@ class _LoginScreenState extends State<LoginScreen> {
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.push(
               context,
-
               MaterialPageRoute(
                 builder: (_) => FutureBuilder<ApiClient>(
                   future: ApiClient.init(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.done) {
-
-                      if (snapshot.hasData) {
-                        final apiClientData = snapshot.data !;
-                          return SettingsScreen(apiClient: apiClientData);
-
+                      if (snapshot.hasData && snapshot.data != null) {
+                        final apiClientData = snapshot.data!;
+                        return SettingsScreen(apiClient: apiClientData);
                       } else {
                         return const Center(
                           child: Text('Erreur de chargement des paramètres'),
@@ -94,61 +131,78 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            // Bandeau: uniquement nomComplet
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  "${Constants.appName} - Connexion",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    "${Constants.appName} - Connexion",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _loginCtl,
-              decoration: const InputDecoration(labelText: 'Login'),
-              onSubmitted: (_) => _submit(authService),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _pwdCtl,
-              decoration: InputDecoration(
-                labelText: 'Mot de passe',
-                suffixIcon: IconButton(
-                  icon: Icon(showPwd ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => showPwd = !showPwd),
-                  tooltip: showPwd ? 'Cacher' : 'Afficher',
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _loginCtl,
+                decoration: const InputDecoration(labelText: 'Login'),
+                onFieldSubmitted: (_) => _performLogin(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Veuillez saisir votre login';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _pwdCtl,
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  suffixIcon: IconButton(
+                    icon: Icon(showPwd ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => showPwd = !showPwd),
+                    tooltip: showPwd ? 'Cacher' : 'Afficher',
+                  ),
+                ),
+                obscureText: !showPwd,
+                onFieldSubmitted: (_) => _performLogin(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Veuillez saisir votre mot de passe';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Se souvenir de moi'),
+                value: rememberMe,
+                onChanged: (v) => setState(() => rememberMe = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: loading ? null : _performLogin,
+                  icon: loading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.login),
+                  label: Text(loading ? 'Connexion...' : 'Se connecter'),
                 ),
               ),
-              obscureText: !showPwd,
-              onSubmitted: (_) => _submit(authService),
-            ),
-            const SizedBox(height: 8),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Se souvenir de moi'),
-              value: rememberMe,
-              onChanged: (v) => setState(() => rememberMe = v ?? false),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => {
-                  if (!loading) {_submit(authService)},
-                },
-                icon: const Icon(Icons.login),
-                label: Text(loading ? 'Connexion...' : 'Se connecter'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

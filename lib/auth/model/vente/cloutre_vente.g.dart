@@ -1,0 +1,44 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'cloutre_vente.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+CloutreVente _$CloutreVenteFromJson(Map<String, dynamic> json) => CloutreVente(
+  venteId: json['venteId'] as String,
+  montantRecu: (json['montantRecu'] as num).toInt(),
+  typeRegleId: json['typeRegleId'] as String,
+  remiseId: json['remiseId'] as String?,
+  userVendeurId: json['userVendeurId'] as String?,
+  commentaire: json['commentaire'] as String?,
+  clientId: json['clientId'] as String?,
+  banque: json['banque'] as String? ?? '',
+  lieux: json['lieux'] as String? ?? '',
+  nom: json['nom'] as String? ?? '',
+  montantRemis: (json['montantRemis'] as num?)?.toInt() ?? 0,
+  totalRecap: (json['totalRecap'] as num?)?.toInt(),
+  montantPaye: (json['montantPaye'] as num?)?.toInt(),
+  data: json['data'] == null
+      ? null
+      : Payment.fromJson(json['data'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$CloutreVenteToJson(CloutreVente instance) =>
+    <String, dynamic>{
+      'venteId': instance.venteId,
+      'montantRecu': instance.montantRecu,
+      'typeRegleId': instance.typeRegleId,
+      'remiseId': instance.remiseId,
+      'userVendeurId': instance.userVendeurId,
+      'commentaire': instance.commentaire,
+      'clientId': instance.clientId,
+      'banque': instance.banque,
+      'lieux': instance.lieux,
+      'nom': instance.nom,
+      'montantRemis': instance.montantRemis,
+      'totalRecap': instance.totalRecap,
+      'montantPaye': instance.montantPaye,
+      'data': instance.data,
+    };

@@ -25,6 +25,60 @@ class ApiClient {
 
   bool get rememberMe => _prefs.getBool('rememberMe') ?? false;
 
+  set rememberMe(bool value) {
+    _prefs.setBool('rememberMe', value);
+  }
+
+  String? get username => _prefs.getString('username');
+
+  set username(String? value) {
+    if (value == null) {
+      _prefs.remove('username');
+    } else {
+      _prefs.setString('username', value);
+    }
+  }
+
+  String? get password => _prefs.getString('password');
+
+  set password(String? value) {
+    if (value == null) {
+      _prefs.remove('password');
+    } else {
+      _prefs.setString('password', value);
+    }
+  }
+
+  String? get phone => _prefs.getString('phone');
+
+  set phone(String? value) {
+    if (value == null) {
+      _prefs.remove('phone');
+    } else {
+      _prefs.setString('phone', value);
+    }
+  }
+
+  String? get address => _prefs.getString('address');
+
+  set address(String? value) {
+    if (value == null) {
+      _prefs.remove('address');
+    } else {
+      _prefs.setString('address', value);
+    }
+  }
+
+  String? get appName => _prefs.getString('appName');
+
+  set appName(String? value) {
+    if (value == null) {
+      _prefs.remove('appName');
+    } else {
+      _prefs.setString('appName', value);
+    }
+  }
+
   String? get apiBaseUrl => _prefs.getString('apiBaseUrl');
 
   int? get port => _prefs.getInt('port');
@@ -116,7 +170,8 @@ class ApiClient {
   String getApiUrl() {
     final useRemote = _isRemote ?? false;
     final baseUrl = useRemote ? _remoteIp : _localIp;
-    final apiPart = '/$_apiBaseUrl';
+   // final apiPart = '/$_apiBaseUrl';
+   final apiPart = '/api';
     final portPart = (_port != null) ? ':$_port' : '';
     return 'http://$baseUrl$portPart$apiPart';
   }
