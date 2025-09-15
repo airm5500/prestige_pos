@@ -3,7 +3,7 @@ description: POS prévente/vente Sunmi V2s (Flutter) - minimal
 publish_to: "none"
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -14,12 +14,18 @@ dependencies:
   sunmi_printer_plus: ^3.0.1
   shared_preferences: ^2.3.2
   intl: ^0.20.2
+  json_annotation: ^4.9.0
+  dart_jsonwebtoken: ^2.12.1
+  provider: ^6.1.2
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
   flutter_launcher_icons: ^0.13.1
+  json_serializable: ^6.2.0
+  build_runner: ^2.4.8
 
 flutter:
   uses-material-design: true

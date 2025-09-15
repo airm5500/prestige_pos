@@ -5,7 +5,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:prestige_pos/auth/service/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 // Sunmi printer (3.x)
 import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
@@ -14,11 +16,24 @@ import 'package:sunmi_printer_plus/sunmi_style.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) =>  AuthService()),
+
+        // Add other providers here if needed
+      ],
+      child: const MyApp(),
+    ),
+
+    //  const MyApp()
+  );
 }
 
 // ======= Config & Session =======
 final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
+
 //TEST COMMIT 2
 class AppConfig {
   static const defaultTypeVenteId = '1'; // AU COMPTANT
@@ -35,13 +50,13 @@ class AppSession {
   String port = '8080';
 
   // En-tête ticket
-  String officineAuthName = '';     // OFFICINE renvoyé par /user/auth (fallback)
+  String officineAuthName = ''; // OFFICINE renvoyé par /user/auth (fallback)
   String phone = '';
   String address = '';
 
   // /officine
-  String officineNomComplet = '';   // nomComplet (nom de la pharmacie)
-  String officineFullName = '';     // fullName (pharmacien / DR) - non affiché
+  String officineNomComplet = ''; // nomComplet (nom de la pharmacie)
+  String officineFullName = ''; // fullName (pharmacien / DR) - non affiché
 
   String baseUrl() {
     final ip = useLocal ? localIp : (remoteIp.isNotEmpty ? remoteIp : localIp);
@@ -52,9 +67,11 @@ class AppSession {
 final appSession = AppSession();
 
 // ======= Utils =======
-String formatCFA(int v) =>
-    NumberFormat.currency(locale: 'fr_FR', symbol: 'FCFA', decimalDigits: 0)
-        .format(v);
+String formatCFA(int v) => NumberFormat.currency(
+  locale: 'fr_FR',
+  symbol: 'FCFA',
+  decimalDigits: 0,
+).format(v);
 
 int asInt(dynamic x) {
   if (x == null) return 0;
@@ -67,8 +84,10 @@ void showSnack(BuildContext context, String msg) =>
 
 class Debouncer {
   Debouncer({required this.milliseconds});
+
   final int milliseconds;
   Timer? _timer;
+
   void run(void Function() action) {
     _timer?.cancel();
     _timer = Timer(Duration(milliseconds: milliseconds), action);
@@ -81,31 +100,45 @@ class Debouncer {
 class Reglement {
   final String id;
   final String name;
+
   Reglement({required this.id, required this.name});
-  factory Reglement.fromJson(Map<String, dynamic> j) =>
-      Reglement(id: j['lgTYPEREGLEMENTID'].toString(), name: j['strNAME']?.toString() ?? '');
+
+  factory Reglement.fromJson(Map<String, dynamic> j) => Reglement(
+    id: j['lgTYPEREGLEMENTID'].toString(),
+    name: j['strNAME']?.toString() ?? '',
+  );
 }
 
 class TypeVente {
   final String id;
   final String name;
+
   TypeVente({required this.id, required this.name});
-  factory TypeVente.fromJson(Map<String, dynamic> j) =>
-      TypeVente(id: j['lgTYPEVENTEID'].toString(), name: j['strNAME']?.toString() ?? '');
+
+  factory TypeVente.fromJson(Map<String, dynamic> j) => TypeVente(
+    id: j['lgTYPEVENTEID'].toString(),
+    name: j['strNAME']?.toString() ?? '',
+  );
 }
 
 class NatureVente {
   final String id;
   final String libelle;
+
   NatureVente({required this.id, required this.libelle});
-  factory NatureVente.fromJson(Map<String, dynamic> j) =>
-      NatureVente(id: j['lgNATUREVENTEID'].toString(), libelle: j['strLIBELLE']?.toString() ?? '');
+
+  factory NatureVente.fromJson(Map<String, dynamic> j) => NatureVente(
+    id: j['lgNATUREVENTEID'].toString(),
+    libelle: j['strLIBELLE']?.toString() ?? '',
+  );
 }
 
 class RemiseClient {
   final String? id; // peut être null pour "SANS REMISE"
   final String label;
+
   RemiseClient({required this.id, required this.label});
+
   factory RemiseClient.fromJson(Map<String, dynamic> j) {
     final id = j['lgREMISEID']?.toString();
     final name = j['strNAME']?.toString() ?? '';
@@ -120,8 +153,15 @@ class ProduitSearch {
   final int price;
   final int stock;
   final String cip;
-  ProduitSearch(
-      {required this.id, required this.name, required this.price, required this.stock, required this.cip});
+
+  ProduitSearch({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.stock,
+    required this.cip,
+  });
+
   factory ProduitSearch.fromJson(Map<String, dynamic> j) => ProduitSearch(
     id: j['lgFAMILLEID'].toString(),
     name: j['strNAME']?.toString() ?? '',
@@ -138,8 +178,16 @@ class VenteItem {
   final int qty;
   final int pu;
   final int total;
-  VenteItem(
-      {required this.itemId, required this.produitId, required this.name, required this.qty, required this.pu, required this.total});
+
+  VenteItem({
+    required this.itemId,
+    required this.produitId,
+    required this.name,
+    required this.qty,
+    required this.pu,
+    required this.total,
+  });
+
   factory VenteItem.fromJson(Map<String, dynamic> j) => VenteItem(
     itemId: j['lgPREENREGISTREMENTDETAILID'].toString(),
     produitId: j['lgFAMILLEID'].toString(),
@@ -154,7 +202,13 @@ class NetVente {
   final int montant;
   final int montantNet;
   final int remise;
-  NetVente({required this.montant, required this.montantNet, required this.remise});
+
+  NetVente({
+    required this.montant,
+    required this.montantNet,
+    required this.remise,
+  });
+
   factory NetVente.fromJson(Map<String, dynamic> j) {
     final d = j['data'] ?? {};
     final m = asInt(d['montant'] ?? d['montantAccount']);
@@ -166,10 +220,13 @@ class NetVente {
 
 class OfficineInfo {
   final String nomComplet; // officine (nom de la pharmacie)
-  final String fullName;   // pharmacien / DR
+  final String fullName; // pharmacien / DR
   OfficineInfo({required this.nomComplet, required this.fullName});
-  factory OfficineInfo.fromJson(Map<String, dynamic> j) =>
-      OfficineInfo(nomComplet: j['nomComplet']?.toString() ?? '', fullName: j['fullName']?.toString() ?? '');
+
+  factory OfficineInfo.fromJson(Map<String, dynamic> j) => OfficineInfo(
+    nomComplet: j['nomComplet']?.toString() ?? '',
+    fullName: j['fullName']?.toString() ?? '',
+  );
 }
 
 // ======= API Service (JSESSIONID) =======
@@ -206,7 +263,7 @@ class ApiService {
     if (navKey.currentState != null) {
       navKey.currentState!.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (r) => false,
+        (r) => false,
       );
     }
   }
@@ -220,8 +277,16 @@ class ApiService {
     return r;
   }
 
-  Future<http.Response> _post(String path, {Object? body, Map<String, String>? q}) async {
-    final r = await _client.post(_u(path, q), headers: _jsonHeaders, body: body);
+  Future<http.Response> _post(
+    String path, {
+    Object? body,
+    Map<String, String>? q,
+  }) async {
+    final r = await _client.post(
+      _u(path, q),
+      headers: _jsonHeaders,
+      body: body,
+    );
     if (r.statusCode == 401 || r.statusCode == 403) {
       _autoLogout();
       throw Exception('Session invalide');
@@ -230,7 +295,11 @@ class ApiService {
     return r;
   }
 
-  Future<http.Response> _put(String path, {Object? body, Map<String, String>? q}) async {
+  Future<http.Response> _put(
+    String path, {
+    Object? body,
+    Map<String, String>? q,
+  }) async {
     final r = await _client.put(_u(path, q), headers: _jsonHeaders, body: body);
     if (r.statusCode == 401 || r.statusCode == 403) {
       _autoLogout();
@@ -240,8 +309,14 @@ class ApiService {
   }
 
   // --- Auth ---
-  Future<bool> login(String login, String password) async {
-    final body = jsonEncode({'login': login, 'password': password});
+  Future<bool> login(
+    String login,
+    String password,
+    AuthService authService,
+  ) async {
+    authService.loginWithJwt(login, password);
+
+    /* final body = jsonEncode({'login': login, 'password': password});
     final r = await _post('user/auth', body: body);
     if (r.statusCode != 200) return false;
     final j = jsonDecode(r.body);
@@ -250,8 +325,10 @@ class ApiService {
       appSession.officineAuthName = (j['OFFICINE']?.toString() ?? '').trim();
       final sp = await SharedPreferences.getInstance();
       await sp.setString('officineAuthName', appSession.officineAuthName);
-    }
-    return ok;
+    }*/
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString('officineAuthName', "OFFICINE");
+    return true;
   }
 
   Future<void> logout() async {
@@ -259,7 +336,9 @@ class ApiService {
       await _post('user/logout');
     } catch (_) {}
     final sp = await SharedPreferences.getInstance();
-    await sp.remove('JSESSIONIDCookie'); // on garde savedLogin/savedPassword si rememberMe=true
+    await sp.remove(
+      'JSESSIONIDCookie',
+    ); // on garde savedLogin/savedPassword si rememberMe=true
     appSession.jsessionCookie = null;
   }
 
@@ -286,28 +365,45 @@ class ApiService {
 
   // --- Common ---
   Future<List<Reglement>> fetchReglements() async {
-    final r = await _get('common/reglement', {'page': '1', 'start': '0', 'limit': '25'});
+    final r = await _get('common/reglement', {
+      'page': '1',
+      'start': '0',
+      'limit': '25',
+    });
     final j = jsonDecode(r.body);
     final List data = j['data'] ?? [];
     return data.map((e) => Reglement.fromJson(e)).toList();
   }
 
   Future<List<TypeVente>> fetchTypeVentes() async {
-    final r = await _get('common/typeventes', {'page': '1', 'start': '0', 'limit': '25'});
+    final r = await _get('common/typeventes', {
+      'page': '1',
+      'start': '0',
+      'limit': '25',
+    });
     final j = jsonDecode(r.body);
     final List data = j['data'] ?? [];
     return data.map((e) => TypeVente.fromJson(e)).toList();
   }
 
   Future<List<NatureVente>> fetchNatures() async {
-    final r = await _get('common/natures', {'page': '1', 'start': '0', 'limit': '25'});
+    final r = await _get('common/natures', {
+      'page': '1',
+      'start': '0',
+      'limit': '25',
+    });
     final j = jsonDecode(r.body);
     final List data = j['data'] ?? [];
     return data.map((e) => NatureVente.fromJson(e)).toList();
   }
 
   Future<List<RemiseClient>> fetchRemises() async {
-    final r = await _get('common/remises-client', {'page': '1', 'start': '0', 'limit': '25', 'query': ''});
+    final r = await _get('common/remises-client', {
+      'page': '1',
+      'start': '0',
+      'limit': '25',
+      'query': '',
+    });
     final j = jsonDecode(r.body);
     final List data = j['data'] ?? [];
     return data.map((e) => RemiseClient.fromJson(e)).toList();
@@ -328,7 +424,12 @@ class ApiService {
   // --- Recherche & Vente ---
   Future<List<ProduitSearch>> searchProduits(String query) async {
     if (query.trim().isEmpty) return [];
-    final r = await _get('vente/search', {'query': query, 'page': '1', 'start': '0', 'limit': '10'});
+    final r = await _get('vente/search', {
+      'query': query,
+      'page': '1',
+      'start': '0',
+      'limit': '10',
+    });
     if (r.statusCode != 200) return [];
     final j = jsonDecode(r.body);
     final List data = j['data'] ?? [];
@@ -363,9 +464,9 @@ class ApiService {
     final j = jsonDecode(r.body);
     final d = j['data'] ?? {};
     return (
-    venteId: d['lgPREENREGISTREMENTID'].toString(),
-    venteRef: d['strREF']?.toString() ?? '',
-    newTotal: asInt(d['intPRICE']),
+      venteId: d['lgPREENREGISTREMENTID'].toString(),
+      venteRef: d['strREF']?.toString() ?? '',
+      newTotal: asInt(d['intPRICE']),
     );
   }
 
@@ -407,7 +508,7 @@ class ApiService {
       'statut': '',
       'page': '1',
       'start': '0',
-      'limit': '10'
+      'limit': '10',
     });
     if (r.statusCode != 200) return [];
     final j = jsonDecode(r.body);
@@ -420,18 +521,19 @@ class ApiService {
     return r.statusCode == 200;
   }
 
-  Future<bool> updateItem(
-      {required String itemId,
-        required String produitId,
-        required int itemPu,
-        required int qte,
-        required int qteServie}) async {
+  Future<bool> updateItem({
+    required String itemId,
+    required String produitId,
+    required int itemPu,
+    required int qte,
+    required int qteServie,
+  }) async {
     final body = jsonEncode({
       'itemId': itemId,
       'itemPu': itemPu,
       'qte': qte,
       'qteServie': qteServie,
-      'produitId': produitId
+      'produitId': produitId,
     });
     final r = await _post('vente/update/item/vno', body: body);
     return r.statusCode == 200;
@@ -450,7 +552,10 @@ class ApiService {
     return j['success'] == true;
   }
 
-  Future<bool> applyRemise({required String remiseId, required String venteId}) async {
+  Future<bool> applyRemise({
+    required String remiseId,
+    required String venteId,
+  }) async {
     final body = jsonEncode({'remiseId': remiseId, 'venteId': venteId});
     final r = await _post('vente/remise', body: body);
     if (r.statusCode != 200) return false;
@@ -462,6 +567,7 @@ class ApiService {
 // ======= App =======
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -477,6 +583,7 @@ class MyApp extends StatelessWidget {
 // ======= StartGate =======
 class StartGate extends StatefulWidget {
   const StartGate({super.key});
+
   @override
   State<StartGate> createState() => _StartGateState();
 }
@@ -506,20 +613,28 @@ class _StartGateState extends State<StartGate> {
 
     if (appSession.localIp.isEmpty) {
       if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+      );
       return;
     }
     if (!mounted) return;
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: CircularProgressIndicator()));
 }
 
 // ======= Settings =======
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -562,8 +677,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final r = await http.get(url).timeout(const Duration(seconds: 4));
       sw.stop();
-      final ok = (r.statusCode == 200 || r.statusCode == 401 || r.statusCode == 403);
-      return ok ? 'OK (${sw.elapsedMilliseconds} ms)' : 'KO (HTTP ${r.statusCode})';
+      final ok =
+          (r.statusCode == 200 || r.statusCode == 401 || r.statusCode == 403);
+      return ok
+          ? 'OK (${sw.elapsedMilliseconds} ms)'
+          : 'KO (HTTP ${r.statusCode})';
     } catch (e) {
       sw.stop();
       return 'KO (${e.runtimeType})';
@@ -595,7 +713,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (!mounted) return;
     showSnack(context, 'Configuration enregistrée');
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
@@ -606,52 +727,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            Row(children: [
-              Expanded(
-                child: TextField(
-                  controller: _localCtl,
-                  decoration: const InputDecoration(labelText: 'Adresse IP Locale (requis)'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _localCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'Adresse IP Locale (requis)',
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: () async {
-                  pingLocal = '...';
-                  setState(() {});
-                  pingLocal = await _ping(_localCtl.text);
-                  setState(() {});
-                },
-                child: const Text('Ping'),
-              ),
-            ]),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () async {
+                    pingLocal = '...';
+                    setState(() {});
+                    pingLocal = await _ping(_localCtl.text);
+                    setState(() {});
+                  },
+                  child: const Text('Ping'),
+                ),
+              ],
+            ),
             if (pingLocal.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text('Local: $pingLocal', style: const TextStyle(fontSize: 12)),
-              ),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: TextField(
-                  controller: _remoteCtl,
-                  decoration: const InputDecoration(labelText: 'Adresse IP Distante'),
+                child: Text(
+                  'Local: $pingLocal',
+                  style: const TextStyle(fontSize: 12),
                 ),
               ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: () async {
-                  pingRemote = '...';
-                  setState(() {});
-                  pingRemote = await _ping(_remoteCtl.text);
-                  setState(() {});
-                },
-                child: const Text('Ping'),
-              ),
-            ]),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _remoteCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'Adresse IP Distante',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () async {
+                    pingRemote = '...';
+                    setState(() {});
+                    pingRemote = await _ping(_remoteCtl.text);
+                    setState(() {});
+                  },
+                  child: const Text('Ping'),
+                ),
+              ],
+            ),
             if (pingRemote.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4, left: 4),
-                child: Text('Distant: $pingRemote', style: const TextStyle(fontSize: 12)),
+                child: Text(
+                  'Distant: $pingRemote',
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             const SizedBox(height: 12),
             TextField(
@@ -670,7 +805,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 32),
             TextField(
               controller: _phoneCtl,
-              decoration: const InputDecoration(labelText: 'Téléphone officine'),
+              decoration: const InputDecoration(
+                labelText: 'Téléphone officine',
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -699,6 +836,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 // ======= Login =======
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -717,7 +855,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _init();
+  //  _init();
   }
 
   Future<void> _init() async {
@@ -731,7 +869,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Préremplir si l'utilisateur avait coché "Se souvenir de moi"
     if (rememberMe) {
       _loginCtl.text = sp.getString('savedLogin') ?? '';
-      _pwdCtl.text   = sp.getString('savedPassword') ?? '';
+      _pwdCtl.text = sp.getString('savedPassword') ?? '';
     }
 
     // Auto-login si cookie + rememberMe (pas après un logout car on supprime le cookie)
@@ -739,16 +877,19 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         await _api.fetchTypeVentes();
         if (!mounted) return;
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PreventePage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PreventePage()),
+        );
         return;
       } catch (_) {}
     }
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit(AuthService authService) async {
     setState(() => loading = true);
     try {
-      final ok = await _api.login(_loginCtl.text.trim(), _pwdCtl.text);
+      final ok = await _api.login(_loginCtl.text.trim(), _pwdCtl.text,authService);
       if (!ok) {
         showSnack(context, 'Échec connexion');
       } else {
@@ -765,7 +906,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (!mounted) return;
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PreventePage()));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PreventePage()),
+        );
       }
     } catch (e) {
       showSnack(context, 'Erreur: $e');
@@ -776,9 +920,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authService =context.watch<AuthService>();
     final officineName = _off?.nomComplet.isNotEmpty == true
         ? _off!.nomComplet
-        : (appSession.officineNomComplet.isNotEmpty ? appSession.officineNomComplet : 'Officine');
+        : (appSession.officineNomComplet.isNotEmpty
+              ? appSession.officineNomComplet
+              : 'Officine');
 
     return Scaffold(
       appBar: AppBar(
@@ -786,9 +933,11 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () =>
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-          )
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
         ],
       ),
       body: Padding(
@@ -799,15 +948,20 @@ class _LoginScreenState extends State<LoginScreen> {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(officineName,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(
+                  officineName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _loginCtl,
               decoration: const InputDecoration(labelText: 'Login'),
-              onSubmitted: (_) => _submit(),
+              onSubmitted: (_) => _submit(authService),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -821,7 +975,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               obscureText: !showPwd,
-              onSubmitted: (_) => _submit(),
+              onSubmitted: (_) => _submit(authService),
             ),
             const SizedBox(height: 8),
             CheckboxListTile(
@@ -835,7 +989,11 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: loading ? null : _submit,
+                onPressed: ()=>{
+                  if(!loading){
+                    _submit(authService)
+                  }
+                },
                 icon: const Icon(Icons.login),
                 label: Text(loading ? 'Connexion...' : 'Se connecter'),
               ),
@@ -850,6 +1008,7 @@ class _LoginScreenState extends State<LoginScreen> {
 // ======= Prévente / Vente =======
 class PreventePage extends StatefulWidget {
   const PreventePage({super.key});
+
   @override
   State<PreventePage> createState() => _PreventePageState();
 }
@@ -899,7 +1058,8 @@ class _PreventePageState extends State<PreventePage> {
   Future<void> _initAll() async {
     setState(() => loading = true);
     try {
-      if (appSession.officineNomComplet.isEmpty || appSession.officineFullName.isEmpty) {
+      if (appSession.officineNomComplet.isEmpty ||
+          appSession.officineFullName.isEmpty) {
         await api.fetchOfficine();
       }
 
@@ -963,20 +1123,31 @@ class _PreventePageState extends State<PreventePage> {
           child: Row(
             children: [
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(p.name,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Text(
-                    'CIP: ${p.cip}${showStocks ? '  •  Stock: ${p.stock}' : ''}',
-                    style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor),
-                  ),
-                ]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'CIP: ${p.cip}${showStocks ? '  •  Stock: ${p.stock}' : ''}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).hintColor,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(width: 8),
-              Text(formatCFA(p.price), style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                formatCFA(p.price),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),
@@ -1092,25 +1263,39 @@ class _PreventePageState extends State<PreventePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Modifier article'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(it.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          TextField(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(it.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
               controller: qCtl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Quantité')),
-          const SizedBox(height: 8),
-          TextField(
+              decoration: const InputDecoration(labelText: 'Quantité'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
               controller: puCtl,
               enabled: canEditPrice,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                  labelText: 'PU',
-                  helperText: canEditPrice ? null : 'Modification du prix non autorisée')),
-        ]),
+                labelText: 'PU',
+                helperText: canEditPrice
+                    ? null
+                    : 'Modification du prix non autorisée',
+              ),
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Valider')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Valider'),
+          ),
         ],
       ),
     );
@@ -1118,7 +1303,12 @@ class _PreventePageState extends State<PreventePage> {
     final newQty = int.tryParse(qCtl.text.trim()) ?? it.qty;
     final newPu = int.tryParse(puCtl.text.trim()) ?? it.pu;
     final success = await api.updateItem(
-        itemId: it.itemId, produitId: it.produitId, itemPu: newPu, qte: newQty, qteServie: newQty);
+      itemId: it.itemId,
+      produitId: it.produitId,
+      itemPu: newPu,
+      qte: newQty,
+      qteServie: newQty,
+    );
     if (!success) {
       showSnack(context, 'Échec modification');
       return;
@@ -1148,8 +1338,10 @@ class _PreventePageState extends State<PreventePage> {
     try {
       await SunmiPrinter.startTransactionPrint(true);
       await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-      await SunmiPrinter.printText('*** TEST IMPRESSION ***',
-          style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD));
+      await SunmiPrinter.printText(
+        '*** TEST IMPRESSION ***',
+        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
+      );
       await SunmiPrinter.printText('Modèle interne Sunmi', style: SunmiStyle());
       await SunmiPrinter.lineWrap(3);
     } catch (e) {
@@ -1171,6 +1363,7 @@ class _PreventePageState extends State<PreventePage> {
         if (t.runes.length <= len) return t.padRight(len);
         return String.fromCharCodes(t.runes.take(len));
       }
+
       String r(int v, int len) => v.toString().padLeft(len);
 
       await SunmiPrinter.startTransactionPrint(true);
@@ -1180,19 +1373,28 @@ class _PreventePageState extends State<PreventePage> {
       // >>> Entête: NOM PHARMACIE (nomComplet), pas le pharmacien
       final head = appSession.officineNomComplet.isNotEmpty
           ? appSession.officineNomComplet
-          : (appSession.officineAuthName.isNotEmpty ? appSession.officineAuthName : 'PHARMACIE');
-      await SunmiPrinter.printText(head.toUpperCase(),
-          style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD));
+          : (appSession.officineAuthName.isNotEmpty
+                ? appSession.officineAuthName
+                : 'PHARMACIE');
+      await SunmiPrinter.printText(
+        head.toUpperCase(),
+        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
+      );
       if (appSession.address.isNotEmpty) {
         await SunmiPrinter.printText(appSession.address, style: SunmiStyle());
       }
       if (appSession.phone.isNotEmpty) {
-        await SunmiPrinter.printText('Tél: ${appSession.phone}', style: SunmiStyle());
+        await SunmiPrinter.printText(
+          'Tél: ${appSession.phone}',
+          style: SunmiStyle(),
+        );
       }
 
       await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
       await SunmiPrinter.printText(line());
-      await SunmiPrinter.printText("Date: ${DateFormat("dd/MM/yyyy HH:mm").format(now)}");
+      await SunmiPrinter.printText(
+        "Date: ${DateFormat("dd/MM/yyyy HH:mm").format(now)}",
+      );
       await SunmiPrinter.printText(line());
 
       // En-têtes colonnes (32: 18 | 2 | 5 | 7) — nous affichons Qt sur la 1ère ligne avec *(n)
@@ -1201,13 +1403,18 @@ class _PreventePageState extends State<PreventePage> {
         style: SunmiStyle(bold: true),
       );
 
-      final items = panier.isEmpty && (venteId != null) ? await api.fetchDetails(venteId!) : panier;
+      final items = panier.isEmpty && (venteId != null)
+          ? await api.fetchDetails(venteId!)
+          : panier;
       for (final it in items) {
         // Ligne 1: Nom + *(qte)
         final tag = ' *(${it.qty})';
         final maxName = cols - tag.length;
         final name = fit(it.name, maxName);
-        await SunmiPrinter.printText(name + tag, style: SunmiStyle(fontSize: SunmiFontSize.SM));
+        await SunmiPrinter.printText(
+          name + tag,
+          style: SunmiStyle(fontSize: SunmiFontSize.SM),
+        );
         // Ligne 2: colonnes PU/Total alignées (18|2|5|7)
         final left = ' ' * 20;
         final pu = r(it.pu, 5);
@@ -1228,11 +1435,15 @@ class _PreventePageState extends State<PreventePage> {
       await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
       await SunmiPrinter.printText('Remise:  ${formatCFA(remise)}');
       await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT);
-      await SunmiPrinter.printText('NET À PAYER: ${formatCFA(netAPayer)}',
-          style: SunmiStyle(bold: true));
+      await SunmiPrinter.printText(
+        'NET À PAYER: ${formatCFA(netAPayer)}',
+        style: SunmiStyle(bold: true),
+      );
 
       // QR code: afficher la référence/ID sans préfixe
-      final code = (venteRef != null && venteRef!.isNotEmpty) ? venteRef! : (venteId ?? 'VENTE');
+      final code = (venteRef != null && venteRef!.isNotEmpty)
+          ? venteRef!
+          : (venteId ?? 'VENTE');
       await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
       await SunmiPrinter.printQRCode(code);
       await SunmiPrinter.printText(code);
@@ -1315,14 +1526,20 @@ class _PreventePageState extends State<PreventePage> {
 
     if (venteId != null) {
       if (selectedRemiseId != null) {
-        final applied = await api.applyRemise(remiseId: selectedRemiseId!, venteId: venteId!);
+        final applied = await api.applyRemise(
+          remiseId: selectedRemiseId!,
+          venteId: venteId!,
+        );
         if (!applied) {
           showSnack(context, 'Application de la remise échouée');
         }
       }
       await _reloadPanier();
     } else {
-      showSnack(context, 'Remise sélectionnée: elle sera appliquée au premier ajout.');
+      showSnack(
+        context,
+        'Remise sélectionnée: elle sera appliquée au premier ajout.',
+      );
     }
   }
 
@@ -1340,8 +1557,14 @@ class _PreventePageState extends State<PreventePage> {
         title: const Text('Impression'),
         content: const Text('Voulez-vous imprimer le ticket ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Non')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Oui')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Non'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Oui'),
+          ),
         ],
       ),
     );
@@ -1373,33 +1596,43 @@ class _PreventePageState extends State<PreventePage> {
 
   @override
   Widget build(BuildContext context) {
-    final topBar = Row(children: [
-      Expanded(
-        child: DropdownButtonFormField<String>(
-          value: selectedTypeVenteId,
-          isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Type de vente'),
-          items: typeVentes
-              .map((e) => DropdownMenuItem(
-              value: e.id, child: Text(e.name, overflow: TextOverflow.ellipsis)))
-              .toList(),
-          onChanged: null, // grisé
+    final topBar = Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            value: selectedTypeVenteId,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Type de vente'),
+            items: typeVentes
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e.id,
+                    child: Text(e.name, overflow: TextOverflow.ellipsis),
+                  ),
+                )
+                .toList(),
+            onChanged: null, // grisé
+          ),
         ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: DropdownButtonFormField<String>(
-          value: selectedNatureVenteId,
-          isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Nature de vente'),
-          items: natures
-              .map((e) => DropdownMenuItem(
-              value: e.id, child: Text(e.libelle, overflow: TextOverflow.ellipsis)))
-              .toList(),
-          onChanged: null, // grisé
+        const SizedBox(width: 12),
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            value: selectedNatureVenteId,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'Nature de vente'),
+            items: natures
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e.id,
+                    child: Text(e.libelle, overflow: TextOverflow.ellipsis),
+                  ),
+                )
+                .toList(),
+            onChanged: null, // grisé
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
 
     final searchBox = TextField(
       controller: searchCtl,
@@ -1407,21 +1640,24 @@ class _PreventePageState extends State<PreventePage> {
       autofocus: true,
       decoration: InputDecoration(
         labelText: 'Recherche produit (CIP / nom)',
-        suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
-          IconButton(
-            tooltip: 'Voir résultats',
-            icon: const Icon(Icons.list),
-            onPressed: results.isEmpty ? null : _openResultsSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              searchCtl.clear();
-              setState(() => results = []);
-              FocusScope.of(context).requestFocus(searchFocus);
-            },
-          ),
-        ]),
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Voir résultats',
+              icon: const Icon(Icons.list),
+              onPressed: results.isEmpty ? null : _openResultsSheet,
+            ),
+            IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () {
+                searchCtl.clear();
+                setState(() => results = []);
+                FocusScope.of(context).requestFocus(searchFocus);
+              },
+            ),
+          ],
+        ),
       ),
       onChanged: _search,
       onSubmitted: (v) {
@@ -1462,12 +1698,19 @@ class _PreventePageState extends State<PreventePage> {
             children: [
               for (final it in panier) ...[
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Ligne 1: nom
-                      Text(it.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        it.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 4),
                       // Ligne 2: QTE/PU + actions
                       Row(
@@ -1475,20 +1718,22 @@ class _PreventePageState extends State<PreventePage> {
                           Text('QTE: ${it.qty}  /  PU: ${formatCFA(it.pu)}'),
                           const Spacer(),
                           IconButton(
-                              icon: const Icon(Icons.edit, size: 20),
-                              tooltip: 'Modifier',
-                              onPressed: () => _editItem(it)),
+                            icon: const Icon(Icons.edit, size: 20),
+                            tooltip: 'Modifier',
+                            onPressed: () => _editItem(it),
+                          ),
                           IconButton(
-                              icon: const Icon(Icons.delete_forever, size: 20),
-                              tooltip: 'Supprimer',
-                              onPressed: () => _removeItem(it)),
+                            icon: const Icon(Icons.delete_forever, size: 20),
+                            tooltip: 'Supprimer',
+                            onPressed: () => _removeItem(it),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
                 const Divider(height: 1),
-              ]
+              ],
             ],
           ),
         ),
@@ -1499,50 +1744,78 @@ class _PreventePageState extends State<PreventePage> {
       Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('Montant', style: TextStyle(fontWeight: FontWeight.w600)),
-              Text(formatCFA(net?.montant ?? panier.fold<int>(0, (a, b) => a + b.total))),
-            ]),
-            const Divider(),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text('Net à payer',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
-                Text(
-                  formatCFA(net?.montantNet ??
-                      ((net?.montant ?? panier.fold<int>(0, (a, b) => a + b.total)) -
-                          (net?.remise ?? 0))),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
-          ]),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Montant',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    formatCFA(
+                      net?.montant ??
+                          panier.fold<int>(0, (a, b) => a + b.total),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Net à payer',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    formatCFA(
+                      net?.montantNet ??
+                          ((net?.montant ??
+                                  panier.fold<int>(0, (a, b) => a + b.total)) -
+                              (net?.remise ?? 0)),
+                    ),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
 
       const SizedBox(height: 8),
 
       // Actions : Remise + Terminer
-      Row(children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.percent),
-            label: Text(selectedRemiseId == null ? 'Remise' : 'Remise (appliquée)'),
-            onPressed: _chooseRemiseFlow,
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.percent),
+              label: Text(
+                selectedRemiseId == null ? 'Remise' : 'Remise (appliquée)',
+              ),
+              onPressed: _chooseRemiseFlow,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: FilledButton.icon(
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Terminer prévente'),
-            onPressed: (venteId == null) ? null : _terminerPrevente,
+          const SizedBox(width: 12),
+          Expanded(
+            child: FilledButton.icon(
+              icon: const Icon(Icons.check_circle),
+              label: const Text('Terminer prévente'),
+              onPressed: (venteId == null) ? null : _terminerPrevente,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
       const SizedBox(height: 12),
     ];
 
@@ -1550,9 +1823,15 @@ class _PreventePageState extends State<PreventePage> {
       appBar: AppBar(
         title: const Text('Prévente / Vente'),
         actions: [
-          IconButton(icon: const Icon(Icons.print), onPressed: _testPrint, tooltip: 'Test imprimante'),
           IconButton(
-            tooltip: appSession.useLocal ? 'Basculer vers Distant' : 'Basculer vers Local',
+            icon: const Icon(Icons.print),
+            onPressed: _testPrint,
+            tooltip: 'Test imprimante',
+          ),
+          IconButton(
+            tooltip: appSession.useLocal
+                ? 'Basculer vers Distant'
+                : 'Basculer vers Local',
             icon: Icon(appSession.useLocal ? Icons.wifi : Icons.public),
             onPressed: () async {
               appSession.useLocal = !appSession.useLocal;
@@ -1576,15 +1855,21 @@ class _PreventePageState extends State<PreventePage> {
             ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () =>
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await api.logout(); // supprime cookie, garde login/pwd si rememberMe=true
+              await api
+                  .logout(); // supprime cookie, garde login/pwd si rememberMe=true
               Navigator.pushAndRemoveUntil(
-                  context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (r) => false,
+              );
             },
           ),
         ],
@@ -1592,11 +1877,11 @@ class _PreventePageState extends State<PreventePage> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: ListView(children: listChildren),
-        ),
-      ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: ListView(children: listChildren),
+              ),
+            ),
     );
   }
 }
