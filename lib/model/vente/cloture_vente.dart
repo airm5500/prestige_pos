@@ -1,7 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:prestige_pos/model/vente/banque_info.dart';
 import 'package:prestige_pos/model/vente/create_response.dart';
-import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/model/vente/payment.dart';
 
 part 'cloture_vente.g.dart';

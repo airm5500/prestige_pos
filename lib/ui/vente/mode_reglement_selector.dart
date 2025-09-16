@@ -69,12 +69,16 @@ class _ModeReglementSelectorState extends State<ModeReglementSelector> {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (provider.errorMessage!.isNotEmpty) {
-          return Text(
-            provider.errorMessage!,
-            style: const TextStyle(color: Colors.red),
-          );
+
+        if (provider.errorMessage != null) {
+          if (provider.errorMessage!.isNotEmpty) {
+            return Text(
+              provider.errorMessage!,
+              style: const TextStyle(color: Colors.red),
+            );
+          }
         }
+
         if (provider.modeReglements.isEmpty) {
           return const Text("Aucun mode de règlement disponible");
         }

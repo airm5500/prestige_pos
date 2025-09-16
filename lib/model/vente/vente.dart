@@ -30,16 +30,12 @@ class Vente {
 
   Map<String, dynamic> toJson() => _$VenteToJson(this);
 
-  factory Vente.newVente(
-    SearchProduitResult selected,
-    int quantity,
-    bool isPrevente,
-  ) {
+  factory Vente.newVente(AddVenteItem item, bool isPrevente) {
     return Vente(
       typeVenteId: '1',
       natureVenteId: '1',
       prevente: isPrevente,
-      item: AddVenteItem.produit(selected, quantity, null),
+      item: item,
     );
   }
 }

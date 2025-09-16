@@ -6,10 +6,13 @@ import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/auth/service/auth_service.dart';
 import 'package:prestige_pos/provider/mode_reglement_provider.dart';
 import 'package:prestige_pos/provider/produit_provider.dart';
+import 'package:prestige_pos/provider/remise_provider.dart';
 import 'package:prestige_pos/provider/vente_provider.dart';
 
 import 'package:prestige_pos/service/mode_reglement_service.dart';
+import 'package:prestige_pos/service/officine_service.dart';
 import 'package:prestige_pos/service/produit_service.dart';
+import 'package:prestige_pos/service/receipt_service.dart';
 import 'package:prestige_pos/service/remise_service.dart';
 import 'package:prestige_pos/service/vente_service.dart';
 import 'package:prestige_pos/ui/login/login_screen.dart';
@@ -35,9 +38,13 @@ void main() async {
         Provider<ProduitService>(
           create: (_) => ProduitService(apiClient: apiClient),
         ),
+        Provider<OfficineService>(
+          create: (_) => OfficineService(apiClient: apiClient),
+        ),
         Provider<VenteService>(
           create: (_) => VenteService(apiClient: apiClient),
         ),
+        Provider<ReceiptService>(create: (_) => ReceiptService()),
         ChangeNotifierProvider<VenteProvider>(
           create: (context) =>
               VenteProvider(venteService: context.read<VenteService>()),
@@ -50,6 +57,8 @@ void main() async {
 
         ChangeNotifierProvider(
           create: (context) => ProduitProvider(context.read<ProduitService>()),
+        ), ChangeNotifierProvider(
+          create: (context) => RemiseProvider(context.read<RemiseService>()),
         ),
       ],
       child: const MyApp(),

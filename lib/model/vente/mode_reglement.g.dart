@@ -10,7 +10,7 @@ ModeReglement _$ModeReglementFromJson(Map<String, dynamic> json) =>
     ModeReglement(
       id: json['id'] as String,
       libelle: json['libelle'] as String,
-      order: (json['order'] as num).toInt(),
+      order: (json['order'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ModeReglementToJson(ModeReglement instance) =>

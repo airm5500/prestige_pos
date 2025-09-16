@@ -48,7 +48,7 @@ class _RemiseSelectorState extends State<RemiseSelector> {
           itemBuilder: (_, i) {
             final mode = modes[i];
             return ListTile(
-              title: Text(mode.libelle),
+              title: Text(mode.libelle!),
               trailing: selected?.id == mode.id
                   ? const Icon(Icons.check, color: Colors.green)
                   : null,
@@ -71,12 +71,16 @@ class _RemiseSelectorState extends State<RemiseSelector> {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (provider.errorMessage!.isNotEmpty) {
-          return Text(
-            provider.errorMessage!,
-            style: const TextStyle(color: Colors.red),
-          );
+        if(provider.errorMessage!=null){
+          if (provider.errorMessage!.isNotEmpty) {
+            return Text(
+              provider.errorMessage!,
+              style: const TextStyle(color: Colors.red),
+            );
+          }
+
         }
+
         if (provider.remises.isEmpty) {
           return const Text("Aucune remise disponible");//TODO add to constants
         }
@@ -90,7 +94,7 @@ class _RemiseSelectorState extends State<RemiseSelector> {
             items: modes
                 .map(
                   (mode) =>
-                      DropdownMenuItem(value: mode, child: Text(mode.libelle)),
+                      DropdownMenuItem(value: mode, child: Text(mode.libelle!)),
                 )
                 .toList(),
             onChanged: (mode) {

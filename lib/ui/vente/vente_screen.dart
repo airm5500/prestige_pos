@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
+import 'package:prestige_pos/model/vente/cloture_vente.dart';
+import 'package:prestige_pos/model/vente/create_response.dart';
 import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/model/vente/add_remise.dart';
 import 'package:prestige_pos/model/vente/remise.dart';
 import 'package:prestige_pos/model/vente/search_produit_result.dart';
+import 'package:prestige_pos/model/vente/vente.dart';
+import 'package:prestige_pos/model/vente/vente_detail.dart';
+import 'package:prestige_pos/model/vente/vente_detail_wrapper.dart';
 import 'package:prestige_pos/provider/vente_provider.dart';
 import 'package:prestige_pos/ui/vente/mode_reglement_selector.dart';
 import 'package:prestige_pos/ui/vente/remise_selector.dart';
@@ -21,6 +26,9 @@ class VenteScreen extends StatefulWidget {
 }
 
 class _VenteScreenState extends State<VenteScreen> {
+  static const String title = 'Vente';
+  static const bool isPrevente = false;
+
   @override
   void initState() {
     super.initState();
@@ -102,9 +110,7 @@ class _VenteScreenState extends State<VenteScreen> {
       children: [
         SearchProductWidget(
           onProductSelected: (SearchProduitResult product) {
-            final item = AddVenteItem.produit(product, 1, currentVente?.saleId);
-            venteProvider.addItem(item);
-
+            _showQuantityDialog(product);
           },
           showStocks: true,
         ),
@@ -114,7 +120,7 @@ class _VenteScreenState extends State<VenteScreen> {
             if (currentVente != null) {
               final addRemise = AddRemise.newAddRemise(
                 currentVente.saleId,
-                remise.id!,
+                remise.id,
               );
               venteProvider.addRemise(addRemise);
             }
@@ -123,8 +129,6 @@ class _VenteScreenState extends State<VenteScreen> {
         const SizedBox(height: 16),
         ModeReglementSelector(
           onSelected: (ModeReglement mode) {
-            // This might be more complex, involving adding a payment
-            // For now, let's just store it in the provider
             venteProvider.updateSelectedModeReglement(mode);
           },
         ),
@@ -138,9 +142,12 @@ class _VenteScreenState extends State<VenteScreen> {
 
   Widget _buildActionButtons() {
     final venteProvider = context.watch<VenteProvider>();
-    final bool canFinalize =
-        venteProvider.currentVente != null &&
-        venteProvider.currentVente!.items.content.isNotEmpty;
+    final ModeReglement? selectedMode = venteProvider.selectedModeReglement;
+    final String modeId = selectedMode?.id ?? '';
+    final CreateResponse? currentVente = venteProvider.currentVente;
+    final VenteDetailWrapper? itemWrapper = currentVente?.items;
+    final List<VenteDetail> items = itemWrapper?.content ?? [];
+    final bool canFinalize = modeId.isNotEmpty && items.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -155,8 +162,15 @@ class _VenteScreenState extends State<VenteScreen> {
           ),
           onPressed: canFinalize
               ? () {
-                  // TODO: Implement finalization logic
-                  // e.g., show confirmation dialog, process payment
+                  if (currentVente != null) {
+                    final ClotureVente clotureVente =
+                        ClotureVente.newClotureVente(
+                          currentVente,
+                          modeId,
+                          null,
+                        );
+                    venteProvider.finalizeVno(clotureVente);
+                  }
                 }
               : null,
         ),
@@ -165,12 +179,12 @@ class _VenteScreenState extends State<VenteScreen> {
           children: [
             Expanded(
               child: OutlinedButton(
-                child: const Text('Mettre en attente'),
                 onPressed: canFinalize
                     ? () {
-                        // TODO: Implement prevente logic
+                        //not yet implemented
                       }
                     : null,
+                child: const Text('Mettre en attente'),
               ),
             ),
             const SizedBox(width: 12),
@@ -186,5 +200,64 @@ class _VenteScreenState extends State<VenteScreen> {
         ),
       ],
     );
+  }
+
+  void _showQuantityDialog(SearchProduitResult product) {
+    final TextEditingController quantityController = TextEditingController(
+      text: '1',
+    );
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Quantité pour ${product.name}'),
+          content: TextField(
+            controller: quantityController,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Quantité'),
+            onSubmitted: (value) {
+              Navigator.of(dialogContext).pop();
+              _submitQuantity(product, value);
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Annuler'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Ajouter'),
+              onPressed: () {
+                final String quantity = quantityController.text;
+                Navigator.of(dialogContext).pop();
+                _submitQuantity(product, quantity);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _submitQuantity(SearchProduitResult product, String quantity) {
+    final int? requestedQuantity = int.tryParse(quantity);
+    if (requestedQuantity != null && requestedQuantity > 0) {
+      final venteProvider = context.read<VenteProvider>();
+      final currentVente = venteProvider.currentVente;
+      final item = AddVenteItem.produit(
+        product,
+        requestedQuantity,
+        currentVente?.saleId,
+      );
+      if (currentVente == null) {
+        final vente = Vente.newVente(item, isPrevente);
+        venteProvider.createVno(vente);
+      } else {
+        venteProvider.addItem(item);
+      }
+    }
   }
 }

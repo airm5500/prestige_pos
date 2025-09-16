@@ -17,6 +17,12 @@ class ApiClient {
 
   ApiClient._(this._prefs) {
     _token = _prefs.getString('token');
+    _token = _prefs.getString('token');
+    _localIp = _prefs.getString('localIp');
+    _remoteIp = _prefs.getString('remoteIp');
+    _apiBaseUrl = _prefs.getString('apiBaseUrl');
+    _port = _prefs.getInt('port');
+    _isRemote = _prefs.getBool('isRemote') ?? false;
   }
 
   static Future<ApiClient> init() async {
@@ -79,7 +85,7 @@ class ApiClient {
   }
 
   Future<void> saveCurrentUser(ClientUser u) async {
-    final prefs = await SharedPreferences.getInstance();
+    print('Saving current user: u');
     final jsonString = json.encode(u);
     await _prefs.setString('currentUser', jsonString);
   }
@@ -190,6 +196,8 @@ class ApiClient {
   String get authUrl {
     final useRemote = _isRemote ?? false;
     final baseUrl = useRemote ? _remoteIp : _localIp;
+    print("Using base URL: $baseUrl");
+    print("useRemote: $useRemote");
     final portPart = (_port != null) ? ':$_port' : '';
     return 'http://$baseUrl$portPart/auth/token';
   }

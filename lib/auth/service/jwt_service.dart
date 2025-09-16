@@ -21,16 +21,17 @@ class JwtService {
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       //TODO retrieve user info
-      print(jsonResponse);
-      ClientUser user = ClientUser.fromJson(jsonResponse['userInfo']);
+      final userInfo = jsonResponse['userInfo'];
+
+      ClientUser user = ClientUser.fromJson(userInfo);
+      print("saved user $user");
       apiClient.currentUser = user;
+
       apiClient.saveCurrentUser(user);
 
       return jsonResponse['access_token'];
     } else {
-      return null;//TODO handle error
+      return null; //TODO handle error
     }
   }
-
-
 }

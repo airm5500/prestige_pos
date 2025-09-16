@@ -281,7 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<String> _ping(String ip) async {
     if (ip.isEmpty) return 'Adresse vide';
-    final base = 'http://$ip:${_portCtl.text}/${_appCtl.text}/api/health';
+    final base = 'http://$ip:${_portCtl.text}/${_appCtl.text}/ping/health';
     final url = Uri.parse(base);
     final sw = Stopwatch()..start();
     try {

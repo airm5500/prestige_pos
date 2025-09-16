@@ -1,10 +1,14 @@
 import 'package:intl/intl.dart';
+import 'package:prestige_pos/model/vente/create_response.dart';
+import 'package:prestige_pos/model/vente/officine.dart';
+import 'package:prestige_pos/service/vente_service.dart';
 
 import 'package:sunmi_printer_plus/enums.dart';
 import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
 import 'package:sunmi_printer_plus/sunmi_style.dart';
 
 class ReceiptService {
+
   Future<bool> _ensurePrinter() async {
     try {
       final ok = await SunmiPrinter.bindingPrinter();
@@ -42,7 +46,7 @@ class ReceiptService {
     }
   }
 
-  Future<void> _printTicket() async {
+  Future<void> printTicket(CreateResponse currentSale,Officine? officine ) async {
     if (!await _ensurePrinter()) return;
     try {
       const int cols = 32;
@@ -87,7 +91,7 @@ class ReceiptService {
         fit('Article', 18) + fit('Qt', 2) + fit('PU', 5) + fit('Total', 7),
         style: SunmiStyle(bold: true),
       );
-    }catch(e) {
+    } catch (e) {
       // showSnack(context, 'Impression ticket: $e');
     }
   }
