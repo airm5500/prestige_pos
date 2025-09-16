@@ -11,8 +11,8 @@ AddVenteItem _$AddVenteItemFromJson(Map<String, dynamic> json) => AddVenteItem(
   saleId: json['saleId'] as String?,
   quantity: (json['quantity'] as num).toInt(),
   quantitySold: (json['quantitySold'] as num).toInt(),
-  freeQuantity: (json['freeQuantity'] as num).toInt(),
-  unitPrice: (json['unitPrice'] as num).toInt(),
+  freeQuantity: (json['freeQuantity'] as num?)?.toInt(),
+  unitPrice: (json['unitPrice'] as num?)?.toInt(),
   id: json['id'] as String?,
 );
 

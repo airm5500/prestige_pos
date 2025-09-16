@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:prestige_pos/model/client_user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
@@ -10,6 +13,7 @@ class ApiClient {
   String? _apiBaseUrl;
   int? _port;
   bool? _isRemote;
+  ClientUser? _currentUser;
 
   ApiClient._(this._prefs) {
     _token = _prefs.getString('token');
@@ -60,6 +64,29 @@ class ApiClient {
   }
 
   String? get address => _prefs.getString('address');
+
+  ClientUser? get currentUser {
+    final jsonString = _prefs.getString('currentUser');
+
+    if (jsonString != null) {
+      final Map<String, dynamic> jsonObj = json.decode(jsonString);
+      final loadedData = ClientUser.fromJson(jsonObj);
+      _currentUser = loadedData;
+      return loadedData;
+    }
+
+    return _currentUser;
+  }
+
+  Future<void> saveCurrentUser(ClientUser u) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = json.encode(u);
+    await _prefs.setString('currentUser', jsonString);
+  }
+
+  set currentUser(ClientUser? value) {
+    _currentUser = value;
+  }
 
   set address(String? value) {
     if (value == null) {
@@ -170,8 +197,8 @@ class ApiClient {
   String getApiUrl() {
     final useRemote = _isRemote ?? false;
     final baseUrl = useRemote ? _remoteIp : _localIp;
-   // final apiPart = '/$_apiBaseUrl';
-   final apiPart = '/api';
+    // final apiPart = '/$_apiBaseUrl';
+    const apiPart = '/api';
     final portPart = (_port != null) ? ':$_port' : '';
     return 'http://$baseUrl$portPart$apiPart';
   }

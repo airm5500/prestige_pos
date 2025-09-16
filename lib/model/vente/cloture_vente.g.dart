@@ -1,12 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'cloutre_vente.dart';
+part of 'cloture_vente.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-CloutreVente _$CloutreVenteFromJson(Map<String, dynamic> json) => CloutreVente(
+ClotureVente _$ClotureVenteFromJson(Map<String, dynamic> json) => ClotureVente(
   venteId: json['venteId'] as String,
   montantRecu: (json['montantRecu'] as num).toInt(),
   typeRegleId: json['typeRegleId'] as String,
@@ -25,7 +25,7 @@ CloutreVente _$CloutreVenteFromJson(Map<String, dynamic> json) => CloutreVente(
       : Payment.fromJson(json['data'] as Map<String, dynamic>),
 );
 
-Map<String, dynamic> _$CloutreVenteToJson(CloutreVente instance) =>
+Map<String, dynamic> _$ClotureVenteToJson(ClotureVente instance) =>
     <String, dynamic>{
       'venteId': instance.venteId,
       'montantRecu': instance.montantRecu,

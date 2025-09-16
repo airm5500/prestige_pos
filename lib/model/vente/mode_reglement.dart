@@ -4,10 +4,12 @@ part 'mode_reglement.g.dart';
 class ModeReglement {
   final String id;
   final String libelle;
+  final  int  order;
 
   ModeReglement({
     required this.id,
     required this.libelle,
+    required this.order,
   });
 
   factory ModeReglement.fromJson(Map<String, dynamic> json) => _$ModeReglementFromJson(json);

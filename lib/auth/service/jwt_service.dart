@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:prestige_pos/auth/service/api_client.dart';
+import 'package:prestige_pos/model/client_user.dart';
 
 class JwtService {
   Future<String?> getToken(String username, String password) async {
@@ -21,9 +22,15 @@ class JwtService {
       final jsonResponse = jsonDecode(response.body);
       //TODO retrieve user info
       print(jsonResponse);
+      ClientUser user = ClientUser.fromJson(jsonResponse['userInfo']);
+      apiClient.currentUser = user;
+      apiClient.saveCurrentUser(user);
+
       return jsonResponse['access_token'];
     } else {
       return null;//TODO handle error
     }
   }
+
+
 }

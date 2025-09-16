@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:prestige_pos/auth/model/vente/add_vente_item.dart';
+import 'package:prestige_pos/model/vente/add_vente_item.dart';
+
 part 'vente.g.dart';
 @JsonSerializable()
 class Vente {

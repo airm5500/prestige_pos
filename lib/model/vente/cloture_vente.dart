@@ -1,8 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:prestige_pos/auth/model/vente/payment.dart';
-part 'cloutre_vente.g.dart';
+import 'package:prestige_pos/model/vente/payment.dart';
+
+part 'cloture_vente.g.dart';
 @JsonSerializable()
-class CloutreVente {
+class ClotureVente {
   final String venteId;
   final int montantRecu;
 
@@ -24,7 +25,7 @@ class CloutreVente {
   final int? montantPaye;
   final Payment? data;
 
-  CloutreVente({
+  ClotureVente({
     required this.venteId,
     required this.montantRecu,
     required this.typeRegleId,
@@ -40,7 +41,7 @@ class CloutreVente {
     this.montantPaye,
     this.data,
   });
-  factory CloutreVente.fromJson(Map<String, dynamic> json) =>
-      _$CloutreVenteFromJson(json);
-  Map<String, dynamic> toJson() => _$CloutreVenteToJson(this);
+  factory ClotureVente.fromJson(Map<String, dynamic> json) =>
+      _$ClotureVenteFromJson(json);
+  Map<String, dynamic> toJson() => _$ClotureVenteToJson(this);
 }

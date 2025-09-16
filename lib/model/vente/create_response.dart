@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import 'package:prestige_pos/auth/model/vente/vente_detail_wrapper.dart';
+
+import 'package:prestige_pos/model/vente/vente_detail_wrapper.dart';
 
 part 'create_response.g.dart';
 
