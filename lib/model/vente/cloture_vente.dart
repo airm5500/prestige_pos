@@ -1,7 +1,11 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:prestige_pos/model/vente/banque_info.dart';
+import 'package:prestige_pos/model/vente/create_response.dart';
+import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/model/vente/payment.dart';
 
 part 'cloture_vente.g.dart';
+
 @JsonSerializable()
 class ClotureVente {
   final String venteId;
@@ -33,15 +37,33 @@ class ClotureVente {
     this.userVendeurId,
     this.commentaire,
     this.clientId,
-    this.banque='',
-    this.lieux='',
-    this.nom='',
-    this.montantRemis=0,
+    this.banque = '',
+    this.lieux = '',
+    this.nom = '',
+    this.montantRemis = 0,
     this.totalRecap,
     this.montantPaye,
     this.data,
   });
+
   factory ClotureVente.fromJson(Map<String, dynamic> json) =>
       _$ClotureVenteFromJson(json);
+
   Map<String, dynamic> toJson() => _$ClotureVenteToJson(this);
+
+  factory ClotureVente.newClotureVente(
+    CreateResponse vente,
+    String modeId,
+    BanqueInfo? banqueInfo,
+  ) {
+    return ClotureVente(
+      venteId: vente.saleId,
+      montantRecu: vente.amount,
+      typeRegleId: modeId,
+      banque: '',
+      lieux: '',
+      nom: banqueInfo?.nom,
+      montantPaye: vente.amount,
+    );
+  }
 }

@@ -5,6 +5,7 @@ import 'package:prestige_pos/model/vente/add_vente_item.dart';
 import 'package:prestige_pos/model/vente/cloture_vente.dart';
 import 'package:prestige_pos/model/vente/create_response.dart';
 import 'package:prestige_pos/model/vente/finalyse_response.dart';
+import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/model/vente/vente.dart';
 import 'package:prestige_pos/service/vente_service.dart';
 
@@ -34,7 +35,11 @@ class VenteProvider extends ChangeNotifier {
 
   FinalyseResponse? get finalyseResponse => _finalyseResponse;
 
-  /// Met à jour le state (loading, data, error)
+  ModeReglement? _selectedModeReglement;
+
+  ModeReglement? get selectedModeReglement => _selectedModeReglement;
+
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -62,6 +67,17 @@ class VenteProvider extends ChangeNotifier {
 
   void _clearError() {
     _errorMessage = null;
+  }
+
+  void createNewVente() {
+    _setCurrentVente(null);
+    _setFinalyseResponse(null);
+    _clearError();
+  }
+
+  void updateSelectedModeReglement(ModeReglement mode) {
+    _selectedModeReglement = mode;
+    notifyListeners();
   }
 
   /// specifique pour la recherche d'une vente et d'impression
