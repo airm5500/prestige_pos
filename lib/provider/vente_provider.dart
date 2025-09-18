@@ -39,7 +39,6 @@ class VenteProvider extends ChangeNotifier {
 
   ModeReglement? get selectedModeReglement => _selectedModeReglement;
 
-
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -143,16 +142,15 @@ class VenteProvider extends ChangeNotifier {
 
   Future<void> _execute<T>(
     Future<ApiResponse<T>> Function() action, {
-    Function(T data)? onSuccess,
+    Function(T? data)? onSuccess,
   }) async {
     _setLoading(true);
     _clearError();
     final response = await action();
     _setLoading(false);
-
     if (response.success) {
-      if (response.data != null && onSuccess != null) {
-        onSuccess(response.data as T);
+      if (onSuccess != null) {
+        onSuccess(response.data);
       }
     } else {
       _setError(response.error ?? 'Erreur inconnue');

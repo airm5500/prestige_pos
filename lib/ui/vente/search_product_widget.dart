@@ -59,20 +59,16 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
     super.dispose();
   }
 
-  /*  Future<void> _search(String q) async {
-    debouncer.run(() async {
-      final r = await widget.produitService.fetchAll(q, 5);
-      if (!mounted) return;
-      setState(() => results = r!);
-      if (results.isNotEmpty && !_sheetOpen) {
-        _openResultsSheet();
-      }
-    });
-  }*/
-  Future<void> _search(String q) async {
+
+  Future<void> _search(String searchTerm) async {
     final produitProvider = context.read<ProduitProvider>();
+    if (searchTerm.length <= 2) {
+      produitProvider.clearProduits();
+      debouncer.run(() {}); // cancel any pending search
+      return;
+    }
     debouncer.run(() async {
-      await produitProvider.fetchProduits(search: q, pageSize: 5);
+      await produitProvider.fetchProduits(search: searchTerm, pageSize: 5);
 
       if (!mounted) return;
 
@@ -119,6 +115,7 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
       },
     ).whenComplete(() {
       _sheetOpen = false;
+      if(!mounted) return;
       FocusScope.of(context).requestFocus(searchFocus);
     });
   }
@@ -129,8 +126,8 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          widget.onProductSelected(p);
           if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+          widget.onProductSelected(p);
         },
         child: Container(
           decoration: BoxDecoration(
@@ -175,7 +172,7 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
   }
 
   Color _chipBg(BuildContext context) =>
-      Theme.of(context).colorScheme.primaryContainer.withOpacity(0.18);//TODO deplacer dans un service de theme
+      Theme.of(context).colorScheme.primaryContainer.withAlpha((255 * 0.18).round());//TODO deplacer dans un service de theme
 
   @override
   Widget build(BuildContext context) {
@@ -209,11 +206,19 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
             ),
           ),
           onChanged: _search,
-          onSubmitted: (v) {
-            if (provider.produits.length == 1) {
-              widget.onProductSelected(provider.produits.first);
+          onSubmitted: (v) async {
+            debouncer.run(() {}); // cancel any pending search
+            if (v.length > 2) {
+              await provider.fetchProduits(search: v, pageSize: 5);
+              if (!mounted) return;
+
+              if (provider.produits.length == 1) {
+                widget.onProductSelected(provider.produits.first);
+              } else {
+                _openResultsSheet(provider.produits);
+              }
             } else {
-              _openResultsSheet(provider.produits);
+              provider.clearProduits();
             }
           },
         );

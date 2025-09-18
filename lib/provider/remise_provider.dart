@@ -4,19 +4,13 @@ import 'package:prestige_pos/service/remise_service.dart';
 
 class RemiseProvider extends ChangeNotifier {
   final RemiseService _service;
-
   RemiseProvider(this._service);
-
   bool _isLoading = false;
   String? _errorMessage;
   List<Remise> _remises = [];
-
   bool get isLoading => _isLoading;
-
   String? get errorMessage => _errorMessage;
-
   List<Remise> get remises => List.unmodifiable(_remises);
-
   Future<void> fetch() async {
     _isLoading = true;
     _errorMessage = null;

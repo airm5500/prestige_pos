@@ -65,8 +65,14 @@ class SharedService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (itemParserFromJson != null && response.body.isNotEmpty) {
+
           final decoded = json.decode(response.body);
-          return ApiResponse.success(itemParserFromJson(decoded));
+          if (decoded is Map<String, dynamic>) {
+            final decodeObject = itemParserFromJson(decoded);
+            return ApiResponse.success(decodeObject);
+          } else {
+            return ApiResponse.error('Format inattendu : objet JSON attendu.');
+          }
         }
         return ApiResponse.success(null as T);
       } else {
@@ -78,7 +84,6 @@ class SharedService {
   }
 
   ApiResponse<T> _handleHttpError<T>(http.Response response, String endpoint) {
-    print('HTTP Error ${response.statusCode} for $endpoint: ${response.body}');
     switch (response.statusCode) {
       case 400:
         return ApiResponse.error('Requête invalide.');

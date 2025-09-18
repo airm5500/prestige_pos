@@ -15,28 +15,30 @@ import 'package:prestige_pos/service/shared_service.dart';
 
 class VenteService {
   final SharedService _sharedService;
+  final  String baseUrl = '/ventes/';
 
   VenteService({required ApiClient apiClient})
     : _sharedService = SharedService(apiClient: apiClient);
 
   Future<ApiResponse<Vente>> find(String saleId) async {
     return await _sharedService.get<Vente>(
-      endpoint: '/ventes/$saleId',
+      endpoint: '$baseUrl$saleId',
       itemParserFromJson: (json) => Vente.fromJson(json),
     );
   }
 
   Future<ApiResponse<CreateResponse>> createVno(Vente vente) async {
-    return await _sharedService.postData<CreateResponse>(
-      endpoint: '/ventes/vno',
+   return await _sharedService.postData<CreateResponse>(
+      endpoint: '${baseUrl}vno',
       body: vente.toJson(),
       itemParserFromJson: (json) => CreateResponse.fromJson(json),
     );
+
   }
 
   Future<ApiResponse<CreateResponse>> addItem(AddVenteItem item) async {
     return await _sharedService.postData<CreateResponse>(
-      endpoint: '/ventes/add-item',
+      endpoint: '${baseUrl}add-item',
       body: item.toJson(),
       itemParserFromJson: (json) => CreateResponse.fromJson(json),
     );
@@ -44,14 +46,14 @@ class VenteService {
 
   Future<ApiResponse<CreateResponse>> removeItem(String itemId) async {
     return await _sharedService.deleteData<CreateResponse>(
-      endpoint: '/remove/vno/item/$itemId',
+      endpoint:'${baseUrl}remove/vno/item/$itemId',
       itemParserFromJson: (json) => CreateResponse.fromJson(json),
     );
   }
 
   Future<ApiResponse<CreateResponse>> updateItem(AddVenteItem item) async {
     return await _sharedService.postData<CreateResponse>(
-      endpoint: '/update/item/vno',
+      endpoint: '${baseUrl}update/item/vno',
       body: item.toJson(),
       itemParserFromJson: (json) => CreateResponse.fromJson(json),
     );
@@ -59,17 +61,19 @@ class VenteService {
 
   Future<ApiResponse<CreateResponse>> addRemise(AddRemise item) async {
     return await _sharedService.postData<CreateResponse>(
-      endpoint: '/add/remise',
+      endpoint: '${baseUrl}add/remise',
       body: item.toJson(),
       itemParserFromJson: (json) => CreateResponse.fromJson(json),
     );
   }
-  Future<ApiResponse<FinalyseResponse>> finalyseVno(ClotureVente clotureVente) async {
+
+  Future<ApiResponse<FinalyseResponse>> finalyseVno(
+    ClotureVente clotureVente,
+  ) async {
     return await _sharedService.postData<FinalyseResponse>(
-      endpoint: '/cloturer-vno',
+      endpoint: '${baseUrl}cloturer-vno',
       body: clotureVente.toJson(),
       itemParserFromJson: (json) => FinalyseResponse.fromJson(json),
     );
   }
-
 }

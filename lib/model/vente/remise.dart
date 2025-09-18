@@ -3,16 +3,15 @@ part 'remise.g.dart';
 @JsonSerializable()
 class Remise {
   final String id;
-  final String? libelle;
+  final String libelle;
   final String? code;
   final String? typeRemiseId;
   final String? typeLibelle;
   final double? taux;
 
-
   Remise({
     required this.id,
-    this.libelle,
+    required this.libelle,
     this.code,
     this.typeRemiseId,
     this.typeLibelle,

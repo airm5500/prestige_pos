@@ -15,4 +15,20 @@ class Constants {
     decimalDigits: 0,
   ).format(v);
 
+  static String formatNumber(num? value) {
+    if (value == null) {
+      return '';
+    }
+    return NumberFormat(
+      '#,##0',
+      'fr_FR',
+    ).format(value).replaceAll(',', '\u00A0');
+  }
+
+  static String format(int v) => NumberFormat.currency(
+    locale: 'fr_FR',
+    symbol: 'FCFA',
+    decimalDigits: 0,
+  ).format(v);
+
 }

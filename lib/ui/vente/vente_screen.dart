@@ -95,7 +95,7 @@ class _VenteScreenState extends State<VenteScreen> {
         children: [
           _buildControlsColumn(),
           const SizedBox(height: 16),
-          const VenteDetailsScreen(),
+          VenteDetailsScreen(),
         ],
       ),
     );
@@ -110,11 +110,13 @@ class _VenteScreenState extends State<VenteScreen> {
       children: [
         SearchProductWidget(
           onProductSelected: (SearchProduitResult product) {
+
             _showQuantityDialog(product);
           },
           showStocks: true,
         ),
         const SizedBox(height: 24),
+
         RemiseSelector(
           onSelected: (Remise remise) {
             if (currentVente != null) {
@@ -203,6 +205,7 @@ class _VenteScreenState extends State<VenteScreen> {
   }
 
   void _showQuantityDialog(SearchProduitResult product) {
+
     final TextEditingController quantityController = TextEditingController(
       text: '1',
     );
@@ -210,7 +213,7 @@ class _VenteScreenState extends State<VenteScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('Quantité pour ${product.name}'),
+          title: Text('Quantité pour ${product.libelle}'),
           content: TextField(
             controller: quantityController,
             keyboardType: TextInputType.number,
@@ -242,7 +245,7 @@ class _VenteScreenState extends State<VenteScreen> {
     );
   }
 
-  void _submitQuantity(SearchProduitResult product, String quantity) {
+  void _submitQuantity(SearchProduitResult product, String quantity) async {
     final int? requestedQuantity = int.tryParse(quantity);
     if (requestedQuantity != null && requestedQuantity > 0) {
       final venteProvider = context.read<VenteProvider>();
@@ -254,9 +257,10 @@ class _VenteScreenState extends State<VenteScreen> {
       );
       if (currentVente == null) {
         final vente = Vente.newVente(item, isPrevente);
-        venteProvider.createVno(vente);
+        await venteProvider.createVno(vente);
+        print("---------- ${venteProvider.currentVente}");
       } else {
-        venteProvider.addItem(item);
+        await venteProvider.addItem(item);
       }
     }
   }

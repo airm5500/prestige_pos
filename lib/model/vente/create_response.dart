@@ -8,17 +8,18 @@ part 'create_response.g.dart';
 @JsonSerializable()
 class CreateResponse {
   final String saleId;
-  final String? transactionNumber;
   final int amount;
-  final int? discount;
   final VenteDetailWrapper items;
+  final String? transactionNumber;
+  final int? discount;
+
 
   CreateResponse({
     required this.saleId,
-    this.transactionNumber,
     required this.amount,
-    this.discount,
     required this.items,
+    this.transactionNumber,
+    this.discount,
   });
 
   factory CreateResponse.fromJson(Map<String, dynamic> json) =>

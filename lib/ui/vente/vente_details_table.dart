@@ -85,7 +85,7 @@ class VenteDetailsTable extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade200),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Text('Panier vide'),
+        child: const Text('Aucun produit ajouté'),
       );
     }
 
@@ -158,11 +158,11 @@ class VenteDetailsTable extends StatelessWidget {
                   Expanded(flex: 2, child: Text('${it.quantity}')),
                   Expanded(
                     flex: 2,
-                    child: Text(Constants.formatCFA(it.unitPrice)),
+                    child: Text(Constants.formatNumber(it.unitPrice)),
                   ),
                   Expanded(
                     flex: 2,
-                    child: Text(Constants.formatCFA(it.amount)),
+                    child: Text(Constants.formatNumber(it.amount)),
                   ),
                   SizedBox(
                     width: 80,

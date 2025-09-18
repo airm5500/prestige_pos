@@ -8,7 +8,7 @@ part of 'remise.dart';
 
 Remise _$RemiseFromJson(Map<String, dynamic> json) => Remise(
   id: json['id'] as String,
-  libelle: json['libelle'] as String?,
+  libelle: json['libelle'] as String,
   code: json['code'] as String?,
   typeRemiseId: json['typeRemiseId'] as String?,
   typeLibelle: json['typeLibelle'] as String?,
