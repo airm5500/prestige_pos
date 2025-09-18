@@ -3,8 +3,14 @@ import 'package:intl/intl.dart';
 
 class Constants {
   static const String appName = 'Laborex';
-  static const defaultTypeVenteId = '1'; // AU COMPTANT
-  static const defaultNatureVenteId = '1';
+  static const String finalyseLabel = 'Finaliser la vente';
+  static const String terminerLabel = 'Terminer la vente';
+  static const String saisirQtyLabel = 'Saissir la quantité';
+  static const String qunatityLabel = 'Quantité';
+  static const String BtnAnnuler = 'Annuler';
+  static const String BtnValider = 'Valider';
+  static const String BtnAdd = 'Ajouter';
+
 
   static void showSnack(BuildContext context, String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

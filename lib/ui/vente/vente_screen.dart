@@ -14,6 +14,7 @@ import 'package:prestige_pos/ui/vente/mode_reglement_selector.dart';
 import 'package:prestige_pos/ui/vente/remise_selector.dart';
 import 'package:prestige_pos/ui/vente/search_product_widget.dart';
 import 'package:prestige_pos/ui/vente/vente_details_table.dart';
+import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
 
 class VenteScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class _VenteScreenState extends State<VenteScreen> {
       children: [
         const Expanded(
           flex: 3,
-          child: VenteDetailsScreen(), // Contains table and totals
+          child: VenteDetailsScreen()
         ),
         const SizedBox(width: 16),
         Expanded(flex: 2, child: _buildControlsColumn()),
@@ -95,7 +96,7 @@ class _VenteScreenState extends State<VenteScreen> {
         children: [
           _buildControlsColumn(),
           const SizedBox(height: 16),
-          VenteDetailsScreen(),
+          const VenteDetailsScreen(),
         ],
       ),
     );
@@ -127,12 +128,6 @@ class _VenteScreenState extends State<VenteScreen> {
             }
           },
         ),
-        const SizedBox(height: 16),
-        ModeReglementSelector(
-          onSelected: (ModeReglement mode) {
-            venteProvider.updateSelectedModeReglement(mode);
-          },
-        ),
         const SizedBox(height: 24),
         const Divider(),
         const SizedBox(height: 16),
@@ -143,19 +138,17 @@ class _VenteScreenState extends State<VenteScreen> {
 
   Widget _buildActionButtons() {
     final venteProvider = context.watch<VenteProvider>();
-    final ModeReglement? selectedMode = venteProvider.selectedModeReglement;
-    final String modeId = selectedMode?.id ?? '';
     final CreateResponse? currentVente = venteProvider.currentVente;
     final VenteDetailWrapper? itemWrapper = currentVente?.items;
     final List<VenteDetail> items = itemWrapper?.content ?? [];
-    final bool canFinalize = modeId.isNotEmpty && items.isNotEmpty;
+    final bool canFinalize = items.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton.icon(
           icon: const Icon(Icons.check_circle),
-          label: const Text('FINALISER LA VENTE'),
+          label: const Text(Constants.finalyseLabel),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,
@@ -163,15 +156,7 @@ class _VenteScreenState extends State<VenteScreen> {
           ),
           onPressed: canFinalize
               ? () {
-                  if (currentVente != null) {
-                    final ClotureVente clotureVente =
-                        ClotureVente.newClotureVente(
-                          currentVente,
-                          modeId,
-                          null,
-                        );
-                    venteProvider.finalizeVno(clotureVente);
-                  }
+                  _showFinalizeSheet();
                 }
               : null,
         ),
@@ -211,12 +196,12 @@ class _VenteScreenState extends State<VenteScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Saissir la quantité'),
+          title: const Text(Constants.saisirQtyLabel),
           content: TextField(
             controller: quantityController,
             keyboardType: TextInputType.number,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Quantité'),
+            decoration: const InputDecoration(labelText: Constants.qunatityLabel),
             onSubmitted: (value) {
               Navigator.of(dialogContext).pop();
               _submitQuantity(product, value);
@@ -224,13 +209,13 @@ class _VenteScreenState extends State<VenteScreen> {
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Annuler'),
+              child: const Text(Constants.BtnAnnuler),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
             ),
             TextButton(
-              child: const Text('Ajouter'),
+              child: const Text(Constants.BtnAdd),
               onPressed: () {
                 final String quantity = quantityController.text;
                 Navigator.of(dialogContext).pop();
@@ -242,6 +227,68 @@ class _VenteScreenState extends State<VenteScreen> {
       },
     );
   }
+
+  void _showFinalizeSheet() {
+    final venteProvider = context.read<VenteProvider>();
+    final currentVente = venteProvider.currentVente;
+    ModeReglement? selectedMode;
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ModeReglementSelector(
+                    onSelected: (ModeReglement mode) {
+                      setState(() {
+                        selectedMode = mode;
+                      });
+                    },
+                    initialValue: selectedMode,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text(Constants.terminerLabel),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(double.infinity, 50),
+                    ),
+                    onPressed: selectedMode == null
+                        ? null
+                        : () {
+                            Navigator.pop(ctx);
+                            if (currentVente != null) {
+                              venteProvider
+                                  .updateSelectedModeReglement(selectedMode!);
+                              final ClotureVente clotureVente =
+                                  ClotureVente.newClotureVente(
+                                currentVente,
+                                selectedMode!.id,
+                                null,
+                              );
+                              venteProvider.finalizeVno(clotureVente);
+                            }
+                          },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
 
   void _submitQuantity(SearchProduitResult product, String quantity) async {
     final int? requestedQuantity = int.tryParse(quantity);
