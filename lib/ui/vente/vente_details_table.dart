@@ -30,32 +30,6 @@ class VenteDetailsScreen extends StatelessWidget {
                 provider.removeItem(it.id);
               },
             ),
-
-            const SizedBox(height: 12),
-
-            // Totaux
-            if (details.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        Constants.formatCFA(vente?.amount ?? 0),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
           ],
         );
       },

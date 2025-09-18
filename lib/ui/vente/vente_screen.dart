@@ -75,67 +75,117 @@ class _VenteScreenState extends State<VenteScreen> {
     );
   }
 
-  Widget _buildDesktopLayout() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Expanded(
-          flex: 3,
-          child: VenteDetailsScreen()
-        ),
-        const SizedBox(width: 16),
-        Expanded(flex: 2, child: _buildControlsColumn()),
-      ],
-    );
-  }
-
-  Widget _buildMobileLayout() {
-    return SingleChildScrollView(
-      child: Column(
+    Widget _buildDesktopLayout() {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Expanded(
+            flex: 3,
+            child: VenteDetailsScreen(),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildControlsColumn(),
+                const SizedBox(height: 16),
+                _buildSummaryAndActions(),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+  
+    Widget _buildMobileLayout() {
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildControlsColumn(),
           const SizedBox(height: 16),
-          const VenteDetailsScreen(),
+          const Expanded(
+            child: VenteDetailsScreen(),
+          ),
+          _buildSummaryAndActions(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildControlsColumn() {
-    final venteProvider = context.watch<VenteProvider>();
-    final currentVente = venteProvider.currentVente;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SearchProductWidget(
-          onProductSelected: (SearchProduitResult product) {
-            _showQuantityDialog(product);
-          },
-          showStocks: true,
+      );
+    }
+  
+    Widget _buildControlsColumn() {
+      return SearchProductWidget(
+        onProductSelected: (SearchProduitResult product) {
+          _showQuantityDialog(product);
+        },
+        showStocks: true,
+      );
+    }
+  
+    Widget _buildSummaryAndActions() {
+      final venteProvider = context.watch<VenteProvider>();
+      final vente = venteProvider.currentVente;
+      final details = vente?.items.content ?? [];
+  
+      if (details.isEmpty) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 16.0),
+          child: _buildActionButtons(),
+        );
+      }
+  
+      return Card(
+        elevation: 8,
+        margin: const EdgeInsets.only(top: 8),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
         ),
-        const SizedBox(height: 24),
-
-        RemiseSelector(
-          onSelected: (Remise remise) {
-            if (currentVente != null) {
-              final addRemise = AddRemise.newAddRemise(
-                currentVente.saleId,
-                remise.id,
-              );
-              venteProvider.addRemise(addRemise);
-            }
-          },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  Text(
+                    Constants.formatCFA(vente?.amount ?? 0),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 12),
+              RemiseSelector(
+                onSelected: (Remise remise) {
+                  if (vente != null) {
+                    final addRemise = AddRemise.newAddRemise(
+                      vente.saleId,
+                      remise.id,
+                    );
+                    venteProvider.addRemise(addRemise);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              _buildActionButtons(),
+            ],
+          ),
         ),
-        const SizedBox(height: 24),
-        const Divider(),
-        const SizedBox(height: 16),
-        _buildActionButtons(),
-      ],
-    );
-  }
-
+      );
+    }
   Widget _buildActionButtons() {
     final venteProvider = context.watch<VenteProvider>();
     final CreateResponse? currentVente = venteProvider.currentVente;
