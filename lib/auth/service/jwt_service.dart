@@ -24,7 +24,6 @@ class JwtService {
       final userInfo = jsonResponse['userInfo'];
 
       ClientUser user = ClientUser.fromJson(userInfo);
-      print("saved user $user");
       apiClient.currentUser = user;
 
       apiClient.saveCurrentUser(user);

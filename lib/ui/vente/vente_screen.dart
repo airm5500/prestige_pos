@@ -110,7 +110,6 @@ class _VenteScreenState extends State<VenteScreen> {
       children: [
         SearchProductWidget(
           onProductSelected: (SearchProduitResult product) {
-
             _showQuantityDialog(product);
           },
           showStocks: true,
@@ -205,7 +204,6 @@ class _VenteScreenState extends State<VenteScreen> {
   }
 
   void _showQuantityDialog(SearchProduitResult product) {
-
     final TextEditingController quantityController = TextEditingController(
       text: '1',
     );
@@ -213,7 +211,7 @@ class _VenteScreenState extends State<VenteScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('Quantité pour ${product.libelle}'),
+          title: const Text('Saissir la quantité'),
           content: TextField(
             controller: quantityController,
             keyboardType: TextInputType.number,
@@ -258,7 +256,6 @@ class _VenteScreenState extends State<VenteScreen> {
       if (currentVente == null) {
         final vente = Vente.newVente(item, isPrevente);
         await venteProvider.createVno(vente);
-        print("---------- ${venteProvider.currentVente}");
       } else {
         await venteProvider.addItem(item);
       }

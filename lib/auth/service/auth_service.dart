@@ -37,7 +37,6 @@ class AuthService extends ChangeNotifier {
         _setError('Échec de la connexion. Veuillez vérifier vos identifiants.');
       }
     } catch (e) {
-      print("Login error-----------------------: $e");
       _isAuthenticated = false;
       _setError('Une erreur inattendue s\'est produite');
     } finally {

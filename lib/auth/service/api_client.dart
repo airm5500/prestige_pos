@@ -85,7 +85,6 @@ class ApiClient {
   }
 
   Future<void> saveCurrentUser(ClientUser u) async {
-    print('Saving current user: u');
     final jsonString = json.encode(u);
     await _prefs.setString('currentUser', jsonString);
   }
@@ -196,8 +195,6 @@ class ApiClient {
   String get authUrl {
     final useRemote = _isRemote ?? false;
     final baseUrl = useRemote ? _remoteIp : _localIp;
-    print("Using base URL: $baseUrl");
-    print("useRemote: $useRemote");
     final portPart = (_port != null) ? ':$_port' : '';
     return 'http://$baseUrl$portPart/auth/token';
   }
