@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prestige_pos/model/vente/remise.dart';
 import 'package:prestige_pos/provider/remise_provider.dart';
+import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
 import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/provider/mode_reglement_provider.dart';
@@ -104,7 +105,7 @@ class _RemiseSelectorState extends State<RemiseSelector> {
               }
             },
             decoration: const InputDecoration(
-              labelText: "Sélectionner une remise", //TODO add to constants
+              labelText: Constants.remisePlaceHolder, //TODO add to constants
               border: OutlineInputBorder(),
             ),
           );
@@ -112,7 +113,7 @@ class _RemiseSelectorState extends State<RemiseSelector> {
 
         // --- Version BottomSheet
         return ListTile(
-          title: Text(selected?.libelle ?? "Sélectionner une remise"),//TODO add to constants
+          title: Text(selected?.libelle ?? Constants.remisePlaceHolder),//TODO add to constants
           trailing: const Icon(Icons.arrow_drop_down),
           onTap: () => _openBottomSheet(modes),
         );

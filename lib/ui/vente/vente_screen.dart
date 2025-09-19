@@ -29,6 +29,15 @@ class VenteScreen extends StatefulWidget {
 class _VenteScreenState extends State<VenteScreen> {
   static const String title = 'Vente';
   static const bool isPrevente = false;
+  final _searchFocusNode = FocusNode();
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -40,152 +49,207 @@ class _VenteScreenState extends State<VenteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nouvelle Vente'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Ventes en attente',
-            onPressed: () {
-              // TODO: Navigate to old prevente screen
-            },
+    return Consumer<VenteProvider>(builder: (context, provider, child) {
+      if (provider.errorMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Constants.showSnack(context, provider.errorMessage!);
+          provider.clearError();
+        });
+      }
+      return Stack(
+        children: [
+          Scaffold(
+            appBar: AppBar(
+              title: const Text('Nouvelle Vente'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  tooltip: 'Ventes en attente',
+                  onPressed: () {
+                    // TODO: Navigate to old prevente screen
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Nouvelle vente',
+                  onPressed: () {
+                    context.read<VenteProvider>().createNewVente();
+                  },
+                ),
+              ],
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth > 800) {
+                    return _buildDesktopLayout();
+                  } else {
+                    return _buildMobileLayout();
+                  }
+                },
+              ),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Nouvelle vente',
-            onPressed: () {
-              context.read<VenteProvider>().createNewVente();
-            },
+          if (provider.isLoading)
+            const Opacity(
+              opacity: 0.8,
+              child: ModalBarrier(dismissible: false, color: Colors.black),
+            ),
+          if (provider.isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Expanded(flex: 3, child: VenteDetailsScreen()),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              _buildControlsColumn(),
+              const SizedBox(height: 16),
+              _buildSummaryAndActions(),
+            ],
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildControlsColumn(),
+          const SizedBox(height: 16),
+          const VenteDetailsScreen(),
+          _buildSummaryAndActions(),
         ],
       ),
-      body: Padding(
+    );
+  }
+
+  Widget _buildControlsColumn() {
+    return SearchProductWidget(
+      onProductSelected: (SearchProduitResult product) {
+        _showQuantityDialog(product);
+      },
+      showStocks: true,
+      focusNode: _searchFocusNode,
+      controller: _searchController,
+    );
+  }
+
+  Widget _buildSummaryAndActions() {
+    final venteProvider = context.watch<VenteProvider>();
+    final vente = venteProvider.currentVente;
+    final details = vente?.items.content ?? [];
+
+    if (details.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 16.0),
+        child: _buildActionButtons(),
+      );
+    }
+
+    return Card(
+      elevation: 8,
+      margin: const EdgeInsets.only(top: 8),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth > 800) {
-              return _buildDesktopLayout();
-            } else {
-              return _buildMobileLayout();
-            }
-          },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (vente != null && (vente.discount ?? 0) > 0) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Sous-total', style: TextStyle(fontSize: 16)),
+                  Text(
+                    Constants.formatCFA(vente.amount),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Remise',
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                  Text(
+                    '- ${Constants.formatCFA(vente.discount ?? 0)}',
+                    style: const TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  Constants.totalPayer,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                Text(
+                  Constants.formatCFA(
+                    (vente?.montantNet != null && vente!.montantNet! > 0)
+                        ? vente.montantNet ?? 0
+                        : vente?.amount ?? 0,
+                  ),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 12),
+            RemiseSelector(
+              onSelected: (Remise remise) {
+                if (vente != null) {
+                  final addRemise = AddRemise.newAddRemise(
+                    vente.saleId,
+                    remise.id,
+                  );
+                  venteProvider.addRemise(addRemise);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            _buildActionButtons(),
+          ],
         ),
       ),
     );
   }
 
-    Widget _buildDesktopLayout() {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Expanded(
-            flex: 3,
-            child: VenteDetailsScreen(),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Column(
-              children: [
-                _buildControlsColumn(),
-                const SizedBox(height: 16),
-                _buildSummaryAndActions(),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-  
-    Widget _buildMobileLayout() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildControlsColumn(),
-          const SizedBox(height: 16),
-           const Expanded(
-            child: VenteDetailsScreen(),
-          ),
-          _buildSummaryAndActions(),
-        ],
-      );
-    }
-  
-    Widget _buildControlsColumn() {
-      return SearchProductWidget(
-        onProductSelected: (SearchProduitResult product) {
-          _showQuantityDialog(product);
-        },
-        showStocks: true,
-      );
-    }
-  
-    Widget _buildSummaryAndActions() {
-      final venteProvider = context.watch<VenteProvider>();
-      final vente = venteProvider.currentVente;
-      final details = vente?.items.content ?? [];
-  
-      if (details.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.only(top: 16.0),
-          child: _buildActionButtons(),
-        );
-      }
-  
-      return Card(
-        elevation: 8,
-        margin: const EdgeInsets.only(top: 8),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    Constants.totalPayer,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  Text(
-                    Constants.formatCFA(vente?.amount ?? 0),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(),
-              const SizedBox(height: 12),
-              RemiseSelector(
-                onSelected: (Remise remise) {
-                  if (vente != null) {
-                    final addRemise = AddRemise.newAddRemise(
-                      vente.saleId,
-                      remise.id,
-                    );
-                    venteProvider.addRemise(addRemise);
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              _buildActionButtons(),
-            ],
-          ),
-        ),
-      );
-    }
   Widget _buildActionButtons() {
     final venteProvider = context.watch<VenteProvider>();
     final CreateResponse? currentVente = venteProvider.currentVente;
@@ -239,7 +303,9 @@ class _VenteScreenState extends State<VenteScreen> {
             controller: quantityController,
             keyboardType: TextInputType.number,
             autofocus: true,
-            decoration: const InputDecoration(labelText: Constants.qunatityLabel),
+            decoration: const InputDecoration(
+              labelText: Constants.qunatityLabel,
+            ),
             onSubmitted: (value) {
               Navigator.of(dialogContext).pop();
               _submitQuantity(product, value);
@@ -306,14 +372,15 @@ class _VenteScreenState extends State<VenteScreen> {
                         : () {
                             Navigator.pop(ctx);
                             if (currentVente != null) {
-                              venteProvider
-                                  .updateSelectedModeReglement(selectedMode!);
+                              venteProvider.updateSelectedModeReglement(
+                                selectedMode!,
+                              );
                               final ClotureVente clotureVente =
                                   ClotureVente.newClotureVente(
-                                currentVente,
-                                selectedMode!.id,
-                                null,
-                              );
+                                    currentVente,
+                                    selectedMode!.id,
+                                    null,
+                                  );
                               venteProvider.finalizeVno(clotureVente);
                             }
                           },
@@ -326,7 +393,6 @@ class _VenteScreenState extends State<VenteScreen> {
       },
     );
   }
-
 
   void _submitQuantity(SearchProduitResult product, String quantity) async {
     final int? requestedQuantity = int.tryParse(quantity);
@@ -344,6 +410,8 @@ class _VenteScreenState extends State<VenteScreen> {
       } else {
         await venteProvider.addItem(item);
       }
+      _searchController.clear();
+      _searchFocusNode.requestFocus();
     }
   }
 }

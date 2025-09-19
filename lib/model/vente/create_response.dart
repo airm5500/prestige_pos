@@ -12,6 +12,7 @@ class CreateResponse {
   final VenteDetailWrapper items;
   final String? transactionNumber;
   final int? discount;
+  final int? montantNet;
 
 
   CreateResponse({
@@ -20,6 +21,7 @@ class CreateResponse {
     required this.items,
     this.transactionNumber,
     this.discount,
+    this.montantNet,
   });
 
   factory CreateResponse.fromJson(Map<String, dynamic> json) =>

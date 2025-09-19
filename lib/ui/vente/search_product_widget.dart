@@ -11,11 +11,15 @@ import 'package:provider/provider.dart';
 class SearchProductWidget extends StatefulWidget {
   final Function(SearchProduitResult) onProductSelected;
   final bool showStocks;
+  final FocusNode? focusNode;
+  final TextEditingController? controller;
 
   const SearchProductWidget({
     super.key,
     required this.onProductSelected,
     required this.showStocks,
+    this.focusNode,
+    this.controller,
   });
 
   @override
@@ -37,8 +41,8 @@ class Debouncer {
 }
 
 class _SearchProductWidgetState extends State<SearchProductWidget> {
-  final searchCtl = TextEditingController();
-  final searchFocus = FocusNode();
+  late TextEditingController searchCtl;
+  late FocusNode searchFocus;
   final debouncer = Debouncer(milliseconds: 400);
   List<SearchProduitResult> results = [];
   bool _sheetOpen = false;
@@ -46,6 +50,8 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
   @override
   void initState() {
     super.initState();
+    searchFocus = widget.focusNode ?? FocusNode();
+    searchCtl = widget.controller ?? TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(searchFocus);
     });
@@ -53,8 +59,12 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
 
   @override
   void dispose() {
-    searchCtl.dispose();
-    searchFocus.dispose();
+    if (widget.controller == null) {
+      searchCtl.dispose();
+    }
+    if (widget.focusNode == null) {
+      searchFocus.dispose();
+    }
     debouncer.dispose();
     super.dispose();
   }
@@ -68,7 +78,7 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
       return;
     }
     debouncer.run(() async {
-      await produitProvider.fetchProduits(search: searchTerm, pageSize: 5);
+      await produitProvider.fetchProduits(search: searchTerm, pageSize: 4);
 
       if (!mounted) return;
 
@@ -161,7 +171,7 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
               ),
               const SizedBox(width: 8),
               Text(
-                Constants.formatCFA(p.regularUnitPrice),
+                Constants.formatNumber(p.regularUnitPrice),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
@@ -186,14 +196,14 @@ class _SearchProductWidgetState extends State<SearchProductWidget> {
             labelText: 'Recherche produit (CIP / nom)',
             suffixIcon: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
+              children: [/*
                 IconButton(
                   tooltip: 'Voir résultats',
                   icon: const Icon(Icons.list),
                   onPressed: provider.produits.isEmpty
                       ? null
                       : () => _openResultsSheet(provider.produits),
-                ),
+                ),*/
                 IconButton(
                   icon: const Icon(Icons.clear),
                   onPressed: () {

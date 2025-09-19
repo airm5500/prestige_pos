@@ -64,14 +64,14 @@ class VenteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _clearError() {
+  void clearError() {
     _errorMessage = null;
   }
 
   void createNewVente() {
     _setCurrentVente(null);
     _setFinalyseResponse(null);
-    _clearError();
+    clearError();
   }
 
   void updateSelectedModeReglement(ModeReglement mode) {
@@ -129,7 +129,7 @@ class VenteProvider extends ChangeNotifier {
 
   Future<void> finalizeVno(ClotureVente clotureVente) async {
     _setLoading(true);
-    _clearError();
+    clearError();
     final response = await _venteService.finalyseVno(clotureVente);
     _setLoading(false);
 
@@ -145,7 +145,7 @@ class VenteProvider extends ChangeNotifier {
     Function(T? data)? onSuccess,
   }) async {
     _setLoading(true);
-    _clearError();
+    clearError();
     final response = await action();
     _setLoading(false);
     if (response.success) {

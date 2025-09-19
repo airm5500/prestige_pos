@@ -84,6 +84,8 @@ class SharedService {
   }
 
   ApiResponse<T> _handleHttpError<T>(http.Response response, String endpoint) {
+    print('Error on $endpoint: ${response.statusCode}');
+    print(response.body);
     switch (response.statusCode) {
       case 400:
         return ApiResponse.error('Requête invalide.');

@@ -14,25 +14,18 @@ class VenteDetailsScreen extends StatelessWidget {
       builder: (context, provider, child) {
         final vente = provider.currentVente;
         final details = vente?.items.content ?? [];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: VenteDetailsTable(
-                details: details,
-                onEdit: (VenteDetail it) {
-                  final addVenteItem = AddVenteItem.fromVenteDetail(
-                    it,
-                    vente?.saleId,
-                  );
-                  provider.updateItem(addVenteItem);
-                },
-                onRemove: (VenteDetail it) {
-                  provider.removeItem(it.id);
-                },
-              ),
-            ),
-          ],
+        return VenteDetailsTable(
+          details: details,
+          onEdit: (VenteDetail it) {
+            final addVenteItem = AddVenteItem.fromVenteDetail(
+              it,
+              vente?.saleId,
+            );
+            provider.updateItem(addVenteItem);
+          },
+          onRemove: (VenteDetail it) {
+            provider.removeItem(it.id);
+          },
         );
       },
     );
@@ -78,6 +71,8 @@ class VenteDetailsTable extends StatelessWidget {
 
   Widget _buildCardsList() {
     return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: details.length,
       itemBuilder: (context, index) {
         final it = details[index];

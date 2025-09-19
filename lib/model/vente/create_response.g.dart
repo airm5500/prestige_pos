@@ -13,6 +13,7 @@ CreateResponse _$CreateResponseFromJson(Map<String, dynamic> json) =>
       items: VenteDetailWrapper.fromJson(json['items'] as Map<String, dynamic>),
       transactionNumber: json['transactionNumber'] as String?,
       discount: (json['discount'] as num?)?.toInt(),
+      montantNet: (json['montantNet'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$CreateResponseToJson(CreateResponse instance) =>
@@ -22,4 +23,5 @@ Map<String, dynamic> _$CreateResponseToJson(CreateResponse instance) =>
       'items': instance.items,
       'transactionNumber': instance.transactionNumber,
       'discount': instance.discount,
+      'montantNet': instance.montantNet,
     };

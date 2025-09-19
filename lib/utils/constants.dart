@@ -12,6 +12,7 @@ class Constants {
   static const String btnAdd = 'Ajouter';
   static const String totalPayer = 'Total à payer';
   static const String mettreEnAttente = 'Mettre en attente';
+  static const String remisePlaceHolder = 'Appliquer une remise';
 
 
   static void showSnack(BuildContext context, String msg) =>
