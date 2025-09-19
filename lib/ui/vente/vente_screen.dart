@@ -16,6 +16,7 @@ import 'package:prestige_pos/ui/vente/search_product_widget.dart';
 import 'package:prestige_pos/ui/vente/vente_details_table.dart';
 import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 class VenteScreen extends StatefulWidget {
   const VenteScreen({super.key});
@@ -39,6 +40,8 @@ class _VenteScreenState extends State<VenteScreen> {
     super.dispose();
   }
 
+
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +52,39 @@ class _VenteScreenState extends State<VenteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<VenteProvider>(builder: (context, provider, child) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) {
+          return;
+        }
+        showDialog<void>(
+          context: context,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: const Text('Quitter?'),
+              content: const Text(
+                  'Voulez-vous vraiment quitter? La vente en cours sera annulée.'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Annuler'),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+                TextButton(
+                  child: const Text('Quitter'),
+                  onPressed: () {
+                    context.read<VenteProvider>().createNewVente();
+                    SystemNavigator.pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+      child: Consumer<VenteProvider>(builder: (context, provider, child) {
       if (provider.errorMessage != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Constants.showSnack(context, provider.errorMessage!);
@@ -102,7 +137,7 @@ class _VenteScreenState extends State<VenteScreen> {
             ),
         ],
       );
-    });
+    }));
   }
 
   Widget _buildDesktopLayout() {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:prestige_pos/model/api_response.dart';
+import 'package:prestige_pos/model/error/problem_detail.dart';
 import 'package:prestige_pos/model/vente/add_remise.dart';
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
 import 'package:prestige_pos/model/vente/cloture_vente.dart';
@@ -28,6 +29,9 @@ class VenteProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   String? _errorMessage;
+  ProblemDetail? _errorDetail;
+
+  ProblemDetail? get errorDetail => _errorDetail;
 
   String? get errorMessage => _errorMessage;
 
@@ -44,8 +48,9 @@ class VenteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _setError(String message) {
+  void _setError(String message, [ProblemDetail? detail]) {
     _errorMessage = message;
+    _errorDetail = detail;
     notifyListeners();
   }
 
@@ -66,6 +71,7 @@ class VenteProvider extends ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    _errorDetail = null;
   }
 
   void createNewVente() {
@@ -136,7 +142,7 @@ class VenteProvider extends ChangeNotifier {
     if (response.success) {
       _setFinalyseResponse(response.data);
     } else {
-      _setError(response.error ?? 'Erreur lors de la création');
+      _setError(response.error ?? 'Erreur lors de la création', response.body);
     }
   }
 
@@ -153,7 +159,7 @@ class VenteProvider extends ChangeNotifier {
         onSuccess(response.data);
       }
     } else {
-      _setError(response.error ?? 'Erreur inconnue');
+      _setError(response.error ?? 'Erreur inconnue', response.body);
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/model/api_response.dart';
+import 'package:prestige_pos/model/error/problem_detail.dart';
 
 class SharedService {
   late final ApiClient _apiClient;
@@ -65,7 +66,6 @@ class SharedService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (itemParserFromJson != null && response.body.isNotEmpty) {
-
           final decoded = json.decode(response.body);
           if (decoded is Map<String, dynamic>) {
             final decodeObject = itemParserFromJson(decoded);
@@ -84,11 +84,11 @@ class SharedService {
   }
 
   ApiResponse<T> _handleHttpError<T>(http.Response response, String endpoint) {
-    print('Error on $endpoint: ${response.statusCode}');
-    print(response.body);
     switch (response.statusCode) {
       case 400:
-        return ApiResponse.error('Requête invalide.');
+        final decoded = json.decode(response.body);
+        final ProblemDetail detail = ProblemDetail.fromJson(decoded);
+        return ApiResponse.withProblemDetail(detail);
       case 401:
       case 403:
         return ApiResponse.error(
