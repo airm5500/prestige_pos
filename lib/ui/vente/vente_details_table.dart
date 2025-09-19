@@ -17,18 +17,20 @@ class VenteDetailsScreen extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            VenteDetailsTable(
-              details: details,
-              onEdit: (VenteDetail it) {
-                final addVenteItem = AddVenteItem.fromVenteDetail(
-                  it,
-                  vente?.saleId,
-                );
-                provider.updateItem(addVenteItem);
-              },
-              onRemove: (VenteDetail it) {
-                provider.removeItem(it.id);
-              },
+            Expanded(
+              child: VenteDetailsTable(
+                details: details,
+                onEdit: (VenteDetail it) {
+                  final addVenteItem = AddVenteItem.fromVenteDetail(
+                    it,
+                    vente?.saleId,
+                  );
+                  provider.updateItem(addVenteItem);
+                },
+                onRemove: (VenteDetail it) {
+                  provider.removeItem(it.id);
+                },
+              ),
             ),
           ],
         );
@@ -63,6 +65,85 @@ class VenteDetailsTable extends StatelessWidget {
       );
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth > 600) {
+          return _buildDataTable();
+        } else {
+          return _buildCardsList();
+        }
+      },
+    );
+  }
+
+  Widget _buildCardsList() {
+    return ListView.builder(
+      itemCount: details.length,
+      itemBuilder: (context, index) {
+        final it = details[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  it.produitName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Text('Qté: ${it.quantity}'),
+                          const SizedBox(width: 16),
+                          Text('PU: ${Constants.formatNumber(it.unitPrice)}'),
+                        ],
+                      ),
+                      Text(
+                        Constants.formatNumber(it.amount),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 20, color: Colors.blue,),
+                      tooltip: 'Modifier',
+                      onPressed: () => onEdit(it),
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton(
+                      icon: const Icon(Icons.delete_forever, size: 20, color: Colors.red,),
+                      tooltip: 'Supprimer',
+                      onPressed: () => onRemove(it),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDataTable() {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade200),

@@ -3,13 +3,15 @@ import 'package:intl/intl.dart';
 
 class Constants {
   static const String appName = 'Laborex';
-  static const String finalyseLabel = 'Finaliser la vente';
-  static const String terminerLabel = 'Terminer la vente';
+  static const String finalyseLabel = 'Finaliser';
+  static const String terminerLabel = 'Terminer';
   static const String saisirQtyLabel = 'Saissir la quantité';
   static const String qunatityLabel = 'Quantité';
-  static const String BtnAnnuler = 'Annuler';
-  static const String BtnValider = 'Valider';
-  static const String BtnAdd = 'Ajouter';
+  static const String btnAnnuler = 'Annuler';
+  static const String btnValider = 'Valider';
+  static const String btnAdd = 'Ajouter';
+  static const String totalPayer = 'Total à payer';
+  static const String mettreEnAttente = 'Mettre en attente';
 
 
   static void showSnack(BuildContext context, String msg) =>

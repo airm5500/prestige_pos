@@ -104,7 +104,7 @@ class _VenteScreenState extends State<VenteScreen> {
         children: [
           _buildControlsColumn(),
           const SizedBox(height: 16),
-          const Expanded(
+           const Expanded(
             child: VenteDetailsScreen(),
           ),
           _buildSummaryAndActions(),
@@ -152,7 +152,7 @@ class _VenteScreenState extends State<VenteScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Total',
+                    Constants.totalPayer,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   Text(
@@ -193,46 +193,34 @@ class _VenteScreenState extends State<VenteScreen> {
     final List<VenteDetail> items = itemWrapper?.content ?? [];
     final bool canFinalize = items.isNotEmpty;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
       children: [
-        ElevatedButton.icon(
-          icon: const Icon(Icons.check_circle),
-          label: const Text(Constants.finalyseLabel),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.check_circle),
+            label: const Text(Constants.finalyseLabel),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            onPressed: canFinalize
+                ? () {
+                    _showFinalizeSheet();
+                  }
+                : null,
           ),
-          onPressed: canFinalize
-              ? () {
-                  _showFinalizeSheet();
-                }
-              : null,
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: canFinalize
-                    ? () {
-                        //not yet implemented
-                      }
-                    : null,
-                child: const Text('Mettre en attente'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextButton(
-                child: const Text('Annuler'),
-                onPressed: () {
-                  context.read<VenteProvider>().createNewVente();
-                },
-              ),
-            ),
-          ],
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton(
+            onPressed: canFinalize
+                ? () {
+                    context.read<VenteProvider>().createNewVente();
+                  }
+                : null,
+            child: const Text(Constants.mettreEnAttente),
+          ),
         ),
       ],
     );
@@ -259,13 +247,13 @@ class _VenteScreenState extends State<VenteScreen> {
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text(Constants.BtnAnnuler),
+              child: const Text(Constants.btnAnnuler),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
             ),
             TextButton(
-              child: const Text(Constants.BtnAdd),
+              child: const Text(Constants.btnAdd),
               onPressed: () {
                 final String quantity = quantityController.text;
                 Navigator.of(dialogContext).pop();
