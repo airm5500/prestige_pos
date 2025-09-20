@@ -1,6 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
-import 'package:prestige_pos/model/vente/search_produit_result.dart';
 
 part 'vente.g.dart';
 

@@ -40,8 +40,6 @@ class _VenteScreenState extends State<VenteScreen> {
     super.dispose();
   }
 
-
-
   @override
   void initState() {
     super.initState();
@@ -64,7 +62,8 @@ class _VenteScreenState extends State<VenteScreen> {
             return AlertDialog(
               title: const Text('Quitter?'),
               content: const Text(
-                  'Voulez-vous vraiment quitter? La vente en cours sera annulée.'),
+                'Voulez-vous vraiment quitter? La vente en cours sera annulée.',
+              ),
               actions: <Widget>[
                 TextButton(
                   child: const Text('Annuler'),
@@ -84,60 +83,61 @@ class _VenteScreenState extends State<VenteScreen> {
           },
         );
       },
-      child: Consumer<VenteProvider>(builder: (context, provider, child) {
-      if (provider.errorMessage != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Constants.showSnack(context, provider.errorMessage!);
-          provider.clearError();
-        });
-      }
-      return Stack(
-        children: [
-          Scaffold(
-            appBar: AppBar(
-              title: const Text('Nouvelle Vente'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.history),
-                  tooltip: 'Ventes en attente',
-                  onPressed: () {
-                    // TODO: Navigate to old prevente screen
-                  },
+      child: Consumer<VenteProvider>(
+        builder: (context, provider, child) {
+          if (provider.errorMessage != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Constants.showSnack(context, provider.errorMessage!);
+              provider.clearError();
+            });
+          }
+          return Stack(
+            children: [
+              Scaffold(
+                appBar: AppBar(
+                  title: const Text('Nouvelle Vente'),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.history),
+                      tooltip: 'Ventes en attente',
+                      onPressed: () {
+                        // TODO: Navigate to old prevente screen
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'Nouvelle vente',
+                      onPressed: () {
+                        context.read<VenteProvider>().createNewVente();
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Nouvelle vente',
-                  onPressed: () {
-                    context.read<VenteProvider>().createNewVente();
-                  },
+                body: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth > 800) {
+                        return _buildDesktopLayout();
+                      } else {
+                        return _buildMobileLayout();
+                      }
+                    },
+                  ),
                 ),
-              ],
-            ),
-            body: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (constraints.maxWidth > 800) {
-                    return _buildDesktopLayout();
-                  } else {
-                    return _buildMobileLayout();
-                  }
-                },
               ),
-            ),
-          ),
-          if (provider.isLoading)
-            const Opacity(
-              opacity: 0.8,
-              child: ModalBarrier(dismissible: false, color: Colors.black),
-            ),
-          if (provider.isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-        ],
-      );
-    }));
+              if (provider.isLoading)
+                const Opacity(
+                  opacity: 0.8,
+                  child: ModalBarrier(dismissible: false, color: Colors.black),
+                ),
+              if (provider.isLoading)
+                const Center(child: CircularProgressIndicator()),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildDesktopLayout() {
@@ -216,13 +216,13 @@ class _VenteScreenState extends State<VenteScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Sous-total', style: TextStyle(fontSize: 16)),
+                  const Text(
+                    Constants.totalVenteLabel,
+                    style: TextStyle(fontSize: 16),
+                  ),
                   Text(
                     Constants.formatCFA(vente.amount),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      decoration: TextDecoration.lineThrough,
-                    ),
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),
@@ -231,11 +231,11 @@ class _VenteScreenState extends State<VenteScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Remise',
+                    Constants.remise,
                     style: TextStyle(fontSize: 16, color: Colors.red),
                   ),
                   Text(
-                    '- ${Constants.formatCFA(vente.discount ?? 0)}',
+                    Constants.formatCFA(vente.discount ?? 0),
                     style: const TextStyle(fontSize: 16, color: Colors.red),
                   ),
                 ],

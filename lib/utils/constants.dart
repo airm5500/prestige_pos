@@ -9,10 +9,13 @@ class Constants {
   static const String qunatityLabel = 'Quantité';
   static const String btnAnnuler = 'Annuler';
   static const String btnValider = 'Valider';
+  static const String totalVenteLabel = 'Total vente';
+
   static const String btnAdd = 'Ajouter';
   static const String totalPayer = 'Total à payer';
   static const String mettreEnAttente = 'Mettre en attente';
   static const String remisePlaceHolder = 'Appliquer une remise';
+  static const String remise = 'Remise';
 
 
   static void showSnack(BuildContext context, String msg) =>

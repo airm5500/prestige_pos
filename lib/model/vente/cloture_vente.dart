@@ -9,22 +9,17 @@ part 'cloture_vente.g.dart';
 class ClotureVente {
   final String venteId;
   final int montantRecu;
-
   final String typeRegleId;
   final String? remiseId;
   final String? userVendeurId;
+  final String? typeVenteId;
   final String? commentaire;
   final String? clientId;
   final String? banque;
-
   final String? lieux;
-
   final String? nom;
-
   final int? montantRemis;
-
   final int? totalRecap;
-
   final int? montantPaye;
   final Payment? data;
 
@@ -34,6 +29,7 @@ class ClotureVente {
     required this.typeRegleId,
     this.remiseId,
     this.userVendeurId,
+    this.typeVenteId,
     this.commentaire,
     this.clientId,
     this.banque = '',
@@ -58,6 +54,7 @@ class ClotureVente {
     return ClotureVente(
       venteId: vente.saleId,
       montantRecu: vente.amount,
+      typeVenteId: '1',
       typeRegleId: modeId,
       banque: '',
       lieux: '',

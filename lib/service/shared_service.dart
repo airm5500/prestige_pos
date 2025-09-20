@@ -84,9 +84,12 @@ class SharedService {
   }
 
   ApiResponse<T> _handleHttpError<T>(http.Response response, String endpoint) {
+    print(response.body);
     switch (response.statusCode) {
+      
       case 400:
-        final decoded = json.decode(response.body);
+        final decodedBody = utf8.decode(response.bodyBytes);
+        final decoded = json.decode(decodedBody);
         final ProblemDetail detail = ProblemDetail.fromJson(decoded);
         return ApiResponse.withProblemDetail(detail);
       case 401:
