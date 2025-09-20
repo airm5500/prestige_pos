@@ -23,6 +23,12 @@ class ApiClient {
     _apiBaseUrl = _prefs.getString('apiBaseUrl');
     _port = _prefs.getInt('port');
     _isRemote = _prefs.getBool('isRemote') ?? false;
+    final jsonString = _prefs.getString('currentUser');
+    if (jsonString != null) {
+      final Map<String, dynamic> jsonObj = json.decode(jsonString);
+      final loadedData = ClientUser.fromJson(jsonObj);
+      _currentUser = loadedData;
+    }
   }
 
   static Future<ApiClient> init() async {

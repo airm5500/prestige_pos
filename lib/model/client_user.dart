@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:prestige_pos/model/privilege.dart';
 
 part 'client_user.g.dart';
 
@@ -14,6 +15,7 @@ class ClientUser {
   final bool? accountNonLocked;
   final bool? accountNonExpired;
   final bool? credentialsNonExpired;
+  final List<Privilege>? privileges ;
   ClientUser({
     required this.firstname,
     required this.lastname,
@@ -25,6 +27,7 @@ class ClientUser {
     this.accountNonLocked,
     this.accountNonExpired,
     this.credentialsNonExpired,
+    this.privileges
   });
 
   factory ClientUser.fromJson(Map<String, dynamic> json) =>

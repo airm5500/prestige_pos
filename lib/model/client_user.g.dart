@@ -17,6 +17,9 @@ ClientUser _$ClientUserFromJson(Map<String, dynamic> json) => ClientUser(
   accountNonLocked: json['accountNonLocked'] as bool?,
   accountNonExpired: json['accountNonExpired'] as bool?,
   credentialsNonExpired: json['credentialsNonExpired'] as bool?,
+  privileges: (json['privileges'] as List<dynamic>?)
+      ?.map((e) => Privilege.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$ClientUserToJson(ClientUser instance) =>
@@ -31,4 +34,5 @@ Map<String, dynamic> _$ClientUserToJson(ClientUser instance) =>
       'accountNonLocked': instance.accountNonLocked,
       'accountNonExpired': instance.accountNonExpired,
       'credentialsNonExpired': instance.credentialsNonExpired,
+      'privileges': instance.privileges,
     };

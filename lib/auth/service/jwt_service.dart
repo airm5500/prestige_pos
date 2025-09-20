@@ -20,7 +20,7 @@ class JwtService {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      //TODO retrieve user info
+
       final userInfo = jsonResponse['userInfo'];
 
       ClientUser user = ClientUser.fromJson(userInfo);

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:prestige_pos/model/api_response.dart';
+import 'package:prestige_pos/model/client_user.dart';
 import 'package:prestige_pos/model/error/problem_detail.dart';
 import 'package:prestige_pos/model/vente/add_remise.dart';
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
@@ -9,6 +12,7 @@ import 'package:prestige_pos/model/vente/finalyse_response.dart';
 import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/model/vente/vente.dart';
 import 'package:prestige_pos/service/vente_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class VenteProvider extends ChangeNotifier {
   final VenteService _venteService;
@@ -25,6 +29,9 @@ class VenteProvider extends ChangeNotifier {
   CreateResponse? get currentVente => _currentVente;
 
   bool _isLoading = false;
+  bool _canUpdatePrice = true;
+
+  bool get canUpdatePrice => _canUpdatePrice;
 
   bool get isLoading => _isLoading;
 
@@ -42,6 +49,23 @@ class VenteProvider extends ChangeNotifier {
   ModeReglement? _selectedModeReglement;
 
   ModeReglement? get selectedModeReglement => _selectedModeReglement;
+
+
+
+  Future<ClientUser?> getCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('currentUser');
+    if (jsonString != null) {
+      final Map<String, dynamic> jsonObj = json.decode(jsonString);
+      return ClientUser.fromJson(jsonObj);
+    }
+    return null;
+  }
+
+  void updateCanUpdatePrice(bool value) {
+    _canUpdatePrice = value;
+    notifyListeners();
+  }
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -86,8 +110,6 @@ class VenteProvider extends ChangeNotifier {
     _selectedModeReglement = mode;
     notifyListeners();
   }
-
-
 
   Future<void> createVno(Vente vente) async {
     await _execute(

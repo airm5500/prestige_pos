@@ -13,15 +13,14 @@ class VenteDetailsScreen extends StatelessWidget {
     return Consumer<VenteProvider>(
       builder: (context, provider, child) {
         final vente = provider.currentVente;
+        final canUpdatePrice = provider.canUpdatePrice;
         final details = vente?.items.content ?? [];
         return VenteDetailsTable(
           details: details,
-          onEdit: (VenteDetail it) {
-            final addVenteItem = AddVenteItem.fromVenteDetail(
-              it,
-              vente?.saleId,
-            );
-            provider.updateItem(addVenteItem);
+          canUpdatePrice: canUpdatePrice,
+          saleId: vente?.saleId,
+          onEdit: (AddVenteItem item) async {
+            await provider.updateItem(item);
           },
           onRemove: (VenteDetail it) {
             provider.removeItem(it.id);
@@ -34,15 +33,42 @@ class VenteDetailsScreen extends StatelessWidget {
 
 class VenteDetailsTable extends StatelessWidget {
   final List<VenteDetail> details;
-  final void Function(VenteDetail) onEdit;
+  final void Function(AddVenteItem) onEdit;
   final void Function(VenteDetail) onRemove;
+  final bool canUpdatePrice;
+  final String? saleId;
 
   const VenteDetailsTable({
     Key? key,
     required this.details,
     required this.onEdit,
     required this.onRemove,
+    required this.canUpdatePrice,
+    required this.saleId,
   }) : super(key: key);
+
+  void _showEditDialog(BuildContext context, VenteDetail detail) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _EditItemDialog(
+          detail: detail,
+          canUpdatePrice: canUpdatePrice,
+          onUpdate: (int newQuantity, int newPrice) {
+            final item = AddVenteItem(
+              id: detail.id,
+              saleId: saleId,
+              produitId: detail.produitId,
+              quantity: newQuantity,
+              quantitySold: newQuantity, // Assuming quantity sold is the new quantity
+              unitPrice: newPrice,
+            );
+            onEdit(item);
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,15 +87,15 @@ class VenteDetailsTable extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth > 600) {
-          return _buildDataTable();
+          return _buildDataTable(context);
         } else {
-          return _buildCardsList();
+          return _buildCardsList(context);
         }
       },
     );
   }
 
-  Widget _buildCardsList() {
+  Widget _buildCardsList(BuildContext context) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -120,7 +146,7 @@ class VenteDetailsTable extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20, color: Colors.blue,),
                       tooltip: 'Modifier',
-                      onPressed: () => onEdit(it),
+                      onPressed: () => _showEditDialog(context, it),
                     ),
                     const SizedBox(width: 6),
                     IconButton(
@@ -138,7 +164,7 @@ class VenteDetailsTable extends StatelessWidget {
     );
   }
 
-  Widget _buildDataTable() {
+  Widget _buildDataTable(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade200),
@@ -226,7 +252,7 @@ class VenteDetailsTable extends StatelessWidget {
                             color: Colors.blue,
                           ),
                           tooltip: 'Modifier',
-                          onPressed: () => onEdit(it),
+                          onPressed: () => _showEditDialog(context, it),
                         ),
                         IconButton(
                           icon: const Icon(
@@ -247,6 +273,113 @@ class VenteDetailsTable extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _EditItemDialog extends StatefulWidget {
+  final VenteDetail detail;
+  final bool canUpdatePrice;
+  final void Function(int newQuantity, int newPrice) onUpdate;
+
+  const _EditItemDialog({
+    Key? key,
+    required this.detail,
+    required this.canUpdatePrice,
+    required this.onUpdate,
+  }) : super(key: key);
+
+  @override
+  _EditItemDialogState createState() => _EditItemDialogState();
+}
+
+class _EditItemDialogState extends State<_EditItemDialog> {
+  late final TextEditingController _quantityController;
+  late final TextEditingController _priceController;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController =
+        TextEditingController(text: widget.detail.quantity.toString());
+    _priceController =
+        TextEditingController(text: widget.detail.unitPrice.toString());
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      final newQuantity = int.parse(_quantityController.text);
+      final newPrice = widget.canUpdatePrice
+          ? int.parse(_priceController.text)
+          : widget.detail.unitPrice;
+
+      widget.onUpdate(newQuantity, newPrice);
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Modifier l\'article'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _quantityController,
+                decoration: const InputDecoration(labelText: 'Quantité'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Veuillez entrer une quantité';
+                  }
+                  if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                    return 'Quantité invalide';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _priceController,
+                decoration: const InputDecoration(labelText: 'Prix unitaire'),
+                keyboardType: TextInputType.number,
+                readOnly: !widget.canUpdatePrice,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Veuillez entrer un prix';
+                  }
+                  if (int.tryParse(value) == null ||
+                      int.parse(value) < 0) {
+                    return 'Prix invalide';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Enregistrer'),
+        ),
+      ],
     );
   }
 }

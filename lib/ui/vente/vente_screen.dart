@@ -71,7 +71,7 @@ class _VenteScreenState extends State<VenteScreen> {
                     Navigator.of(dialogContext).pop();
                   },
                 ),
-                TextButton(
+                ElevatedButton(
                   child: const Text('Quitter'),
                   onPressed: () {
                     context.read<VenteProvider>().createNewVente();
@@ -353,7 +353,7 @@ class _VenteScreenState extends State<VenteScreen> {
                 Navigator.of(dialogContext).pop();
               },
             ),
-            TextButton(
+            ElevatedButton(
               child: const Text(Constants.btnAdd),
               onPressed: () {
                 final String quantity = quantityController.text;
