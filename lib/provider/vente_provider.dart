@@ -16,9 +16,9 @@ class VenteProvider extends ChangeNotifier {
   VenteProvider({required VenteService venteService})
     : _venteService = venteService;
 
-  Vente? _currentVenteToPrint;
+  CreateResponse? _currentVenteToPrint;
 
-  Vente? get currentVenteToPrint => _currentVenteToPrint;
+  CreateResponse? get currentVenteToPrint => _currentVenteToPrint;
 
   CreateResponse? _currentVente;
 
@@ -56,10 +56,11 @@ class VenteProvider extends ChangeNotifier {
 
   void _setFinalyseResponse(FinalyseResponse? response) {
     _finalyseResponse = response;
+    _setCurrentVenteToPrint(_currentVente);
     notifyListeners();
   }
 
-  void _setCurrentVenteToPrint(Vente? vente) {
+  void _setCurrentVenteToPrint(CreateResponse? vente) {
     _currentVenteToPrint = vente;
     notifyListeners();
   }
@@ -75,6 +76,7 @@ class VenteProvider extends ChangeNotifier {
   }
 
   void createNewVente() {
+    _setCurrentVenteToPrint(_currentVente);
     _setCurrentVente(null);
     _setFinalyseResponse(null);
     clearError();
@@ -85,18 +87,7 @@ class VenteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// specifique pour la recherche d'une vente et d'impression
-  /* Future<void> find(String saleId) async {
-    _setLoading(true);
-    final response = await _venteService.find(saleId);
-    _setLoading(false);
 
-    if (response.success) {
-      _setCurrentVenteToPrint(response.data);
-    } else {
-      _setError(response.error ?? 'Erreur inconnue');
-    }
-  }*/
 
   Future<void> createVno(Vente vente) async {
     await _execute(
@@ -140,6 +131,7 @@ class VenteProvider extends ChangeNotifier {
     _setLoading(false);
 
     if (response.success) {
+      print("------------------------   Finalyse successful: ${response.data}");
       _setFinalyseResponse(response.data);
     } else {
       _setError(response.error ?? 'Erreur lors de la création', response.body);
