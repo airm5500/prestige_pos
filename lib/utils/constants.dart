@@ -10,13 +10,20 @@ class Constants {
   static const String btnAnnuler = 'Annuler';
   static const String btnValider = 'Valider';
   static const String totalVenteLabel = 'Total vente';
+  static const String printReciptTitle = 'Imprimer le reçu?';
+  static const String printReciptMessage = 'Voulez-vous imprimer un reçu?';
 
   static const String btnAdd = 'Ajouter';
+  static const String btnNon = 'Non';
+  static const String btnPrint = 'Imprimer';
   static const String totalPayer = 'Total à payer';
-  static const String mettreEnAttente = 'Mettre en attente';
+  static const String newBtnLabel = 'Nouvelle vente';
   static const String remisePlaceHolder = 'Appliquer une remise';
   static const String remise = 'Remise';
   static const String canUpdatePrice = 'canUpdatePrice';
+  static const String progressStatut = 'PROGRESS';
+  static const String closedStatut = 'CLOSED';
+  static const String venteTitle = 'Nouvelle vente';
 
   static void showSnack(BuildContext context, String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

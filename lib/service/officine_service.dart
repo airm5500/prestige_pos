@@ -14,18 +14,21 @@ class OfficineService {
 
   Future<ApiResponse<Officine?>> find() async {
     final storedData = await _loadOfficineStorage();
-    if (storedData != null) {
+    print('Stored Officine Data: $storedData');
+    if (storedData == null) {
       final response = await _sharedService.get<Officine>(
-        endpoint: '/officine',
+        endpoint: '/common/officine',
         itemParserFromJson: (json) => Officine.fromJson(json),
       );
+      print('Fetched Officine Data: ${response.data}');
       if (response.data != null) {
         await _saveAllModeReglement(response.data!);
         return response;
       }
       return ApiResponse.success(storedData);
+    } else {
+      return ApiResponse.success(storedData);
     }
-    return ApiResponse.error('Error loading officine data');
   }
 
   Future<Officine?> _loadOfficineStorage() async {

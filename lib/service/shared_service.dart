@@ -164,7 +164,6 @@ class SharedService {
         }
 
         final decodedBody = json.decode(response.body);
-        print(decodedBody);
         if (decodedBody is Map<String, dynamic>) {
           final result = itemParserFromJson(decodedBody);
           return ApiResponse.success(result);

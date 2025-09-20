@@ -17,9 +17,14 @@ import 'package:prestige_pos/ui/vente/vente_details_table.dart';
 import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:prestige_pos/main.dart';
+
+import 'package:prestige_pos/service/receipt_service.dart';
 
 class VenteScreen extends StatefulWidget {
-  const VenteScreen({super.key});
+  final ReceiptService receiptService;
+
+  const VenteScreen({super.key, required this.receiptService});
 
   static const String routeName = '/vente';
 
@@ -95,13 +100,13 @@ class _VenteScreenState extends State<VenteScreen> {
             children: [
               Scaffold(
                 appBar: AppBar(
-                  title: const Text('Nouvelle Vente'),
-                  actions: [
+                  title: const Text(Constants.venteTitle),
+                  /* actions: [
                     IconButton(
                       icon: const Icon(Icons.history),
                       tooltip: 'Ventes en attente',
                       onPressed: () {
-                        // TODO: Navigate to old prevente screen
+
                       },
                     ),
                     IconButton(
@@ -111,7 +116,7 @@ class _VenteScreenState extends State<VenteScreen> {
                         context.read<VenteProvider>().createNewVente();
                       },
                     ),
-                  ],
+                  ],*/
                 ),
                 body: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -288,16 +293,26 @@ class _VenteScreenState extends State<VenteScreen> {
   Widget _buildActionButtons() {
     final venteProvider = context.watch<VenteProvider>();
     final CreateResponse? currentVente = venteProvider.currentVente;
+    final isProgress = currentVente?.isInProgress;
+    final isCompleted = currentVente?.isCompleted ?? false;
     final VenteDetailWrapper? itemWrapper = currentVente?.items;
     final List<VenteDetail> items = itemWrapper?.content ?? [];
-    final bool canFinalize = items.isNotEmpty;
+    final bool canFinalize = items.isNotEmpty && (isProgress == true);
+    final ModeReglement? selectedMode = venteProvider.selectedModeReglement;
 
     return Row(
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            icon: const Icon(Icons.check_circle),
-            label: const Text(Constants.finalyseLabel),
+            /* icon: const Icon(Icons.check_circle),
+            label: const Text(Constants.finalyseLabel),*/
+            icon: isCompleted
+                ? const Icon(Icons.print)
+                : const Icon(Icons.check_circle),
+            label: Text(
+              isCompleted ? Constants.btnPrint : Constants.finalyseLabel,
+            ),
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
@@ -307,18 +322,28 @@ class _VenteScreenState extends State<VenteScreen> {
                 ? () {
                     _showFinalizeSheet();
                   }
+                : isCompleted
+                ? () async {
+                    final isSuccess = await widget.receiptService.printTicket(
+                      navKey.currentContext!,
+                      currentVente!,
+                      selectedMode!,
+                    );
+                    if (isSuccess) {
+                      venteProvider.createNewVente();
+                    }
+                  }
                 : null,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton(
-            onPressed: canFinalize
-                ? () {
-                    context.read<VenteProvider>().createNewVente();
-                  }
-                : null,
-            child: const Text(Constants.mettreEnAttente),
+            onPressed: () {
+              context.read<VenteProvider>().createNewVente();
+            },
+
+            child: const Text(Constants.newBtnLabel),
           ),
         ),
       ],
@@ -404,7 +429,7 @@ class _VenteScreenState extends State<VenteScreen> {
                     ),
                     onPressed: selectedMode == null
                         ? null
-                        : () {
+                        : () async {
                             Navigator.pop(ctx);
                             if (currentVente != null) {
                               venteProvider.updateSelectedModeReglement(
@@ -416,7 +441,49 @@ class _VenteScreenState extends State<VenteScreen> {
                                     selectedMode!.id,
                                     null,
                                   );
-                              venteProvider.finalizeVno(clotureVente);
+                              final finalyseResponse = await venteProvider
+                                  .finalizeVno(clotureVente);
+
+                              if (finalyseResponse != null && mounted) {
+                                await showDialog<void>(
+                                  context: navKey.currentContext!,
+                                  builder: (BuildContext dialogContext) {
+                                    return AlertDialog(
+                                      title: const Text(
+                                        Constants.printReciptTitle,
+                                      ),
+                                      content: const Text(
+                                        Constants.printReciptMessage,
+                                      ),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          child: const Text(Constants.btnNon),
+                                          onPressed: () {
+                                            venteProvider.createNewVente();
+                                            navKey.currentState?.pop();
+                                          },
+                                        ),
+                                        ElevatedButton(
+                                          child: const Text(Constants.btnPrint),
+                                          onPressed: () async {
+                                            final isSuccess = await widget
+                                                .receiptService
+                                                .printTicket(
+                                                  navKey.currentContext!,
+                                                  currentVente,
+                                                  selectedMode!,
+                                                );
+                                            if (isSuccess) {
+                                              venteProvider.createNewVente();
+                                            }
+                                            navKey.currentState?.pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
                             }
                           },
                   ),

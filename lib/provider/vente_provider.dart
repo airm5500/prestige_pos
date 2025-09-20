@@ -20,10 +20,6 @@ class VenteProvider extends ChangeNotifier {
   VenteProvider({required VenteService venteService})
     : _venteService = venteService;
 
-  CreateResponse? _currentVenteToPrint;
-
-  CreateResponse? get currentVenteToPrint => _currentVenteToPrint;
-
   CreateResponse? _currentVente;
 
   CreateResponse? get currentVente => _currentVente;
@@ -49,8 +45,6 @@ class VenteProvider extends ChangeNotifier {
   ModeReglement? _selectedModeReglement;
 
   ModeReglement? get selectedModeReglement => _selectedModeReglement;
-
-
 
   Future<ClientUser?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
@@ -80,12 +74,10 @@ class VenteProvider extends ChangeNotifier {
 
   void _setFinalyseResponse(FinalyseResponse? response) {
     _finalyseResponse = response;
-    _setCurrentVenteToPrint(_currentVente);
-    notifyListeners();
-  }
+    if (_currentVente != null && response != null) {
+      _currentVente!.status = 'CLOSED';
+    }
 
-  void _setCurrentVenteToPrint(CreateResponse? vente) {
-    _currentVenteToPrint = vente;
     notifyListeners();
   }
 
@@ -100,7 +92,6 @@ class VenteProvider extends ChangeNotifier {
   }
 
   void createNewVente() {
-    _setCurrentVenteToPrint(_currentVente);
     _setCurrentVente(null);
     _setFinalyseResponse(null);
     clearError();
@@ -146,17 +137,18 @@ class VenteProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> finalizeVno(ClotureVente clotureVente) async {
+  Future<FinalyseResponse?> finalizeVno(ClotureVente clotureVente) async {
     _setLoading(true);
     clearError();
     final response = await _venteService.finalyseVno(clotureVente);
     _setLoading(false);
 
     if (response.success) {
-      print("------------------------   Finalyse successful: ${response.data}");
       _setFinalyseResponse(response.data);
+      return response.data;
     } else {
       _setError(response.error ?? 'Erreur lors de la création', response.body);
+      return null;
     }
   }
 

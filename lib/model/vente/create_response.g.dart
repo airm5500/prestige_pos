@@ -14,6 +14,7 @@ CreateResponse _$CreateResponseFromJson(Map<String, dynamic> json) =>
       transactionNumber: json['transactionNumber'] as String?,
       discount: (json['discount'] as num?)?.toInt(),
       montantNet: (json['montantNet'] as num?)?.toInt(),
+      status: json['status'] as String? ?? 'PROGRESS',
     );
 
 Map<String, dynamic> _$CreateResponseToJson(CreateResponse instance) =>
@@ -24,4 +25,5 @@ Map<String, dynamic> _$CreateResponseToJson(CreateResponse instance) =>
       'transactionNumber': instance.transactionNumber,
       'discount': instance.discount,
       'montantNet': instance.montantNet,
+      'status': instance.status,
     };

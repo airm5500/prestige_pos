@@ -11,7 +11,6 @@ Officine _$OfficineFromJson(Map<String, dynamic> json) => Officine(
   name: json['name'] as String,
   address: json['address'] as String?,
   phone: json['phone'] as String?,
-  email: json['email'] as String?,
   note: json['note'] as String?,
 );
 
@@ -20,6 +19,5 @@ Map<String, dynamic> _$OfficineToJson(Officine instance) => <String, dynamic>{
   'name': instance.name,
   'address': instance.address,
   'phone': instance.phone,
-  'email': instance.email,
   'note': instance.note,
 };

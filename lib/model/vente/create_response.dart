@@ -1,6 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 
-
 import 'package:prestige_pos/model/vente/vente_detail_wrapper.dart';
 
 part 'create_response.g.dart';
@@ -13,7 +12,7 @@ class CreateResponse {
   final String? transactionNumber;
   final int? discount;
   final int? montantNet;
-
+   String status;
 
   CreateResponse({
     required this.saleId,
@@ -22,7 +21,11 @@ class CreateResponse {
     this.transactionNumber,
     this.discount,
     this.montantNet,
-  });
+    this.status = 'PROGRESS',
+  }) ;
+  bool get isCompleted => status == 'CLOSED';
+  bool get isInProgress => status == 'PROGRESS';
+
 
   factory CreateResponse.fromJson(Map<String, dynamic> json) =>
       _$CreateResponseFromJson(json);

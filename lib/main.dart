@@ -44,7 +44,11 @@ void main() async {
         Provider<VenteService>(
           create: (_) => VenteService(apiClient: apiClient),
         ),
-        Provider<ReceiptService>(create: (_) => ReceiptService()),
+
+        Provider<ReceiptService>(
+          create: (context) =>
+              ReceiptService(officineService: context.read<OfficineService>()),
+        ),
         ChangeNotifierProvider<VenteProvider>(
           create: (context) =>
               VenteProvider(venteService: context.read<VenteService>()),
@@ -57,7 +61,8 @@ void main() async {
 
         ChangeNotifierProvider(
           create: (context) => ProduitProvider(context.read<ProduitService>()),
-        ), ChangeNotifierProvider(
+        ),
+        ChangeNotifierProvider(
           create: (context) => RemiseProvider(context.read<RemiseService>()),
         ),
       ],
@@ -82,14 +87,11 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.teal),
       darkTheme: ThemeData.dark(useMaterial3: true),
-      // home: const StartGate(),
       initialRoute: '/',
       routes: {
-        '/': (context) => const StartGate(), // Default route
-
-        VenteScreen.routeName: (context) => const VenteScreen(),
-
-        // '/sales': (context) => SalesPage(),
+        '/': (context) => const StartGate(),
+        VenteScreen.routeName: (context) =>
+            VenteScreen(receiptService: context.read<ReceiptService>()),
       },
     );
   }
@@ -132,7 +134,6 @@ class _StartGateState extends State<StartGate> {
       );
     }
 
-    // Redirection selon l’état d’authentification
     if (!mounted) return;
     if (authService.isAuthenticated) {
       Navigator.pushReplacementNamed(context, VenteScreen.routeName);
