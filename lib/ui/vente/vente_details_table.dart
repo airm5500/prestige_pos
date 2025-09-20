@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:prestige_pos/model/client_user.dart';
+
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
 import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
@@ -10,20 +12,43 @@ class VenteDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<VenteProvider>(
-      builder: (context, provider, child) {
-        final vente = provider.currentVente;
-        final canUpdatePrice = provider.canUpdatePrice;
-        final details = vente?.items.content ?? [];
-        return VenteDetailsTable(
-          details: details,
-          canUpdatePrice: canUpdatePrice,
-          saleId: vente?.saleId,
-          onEdit: (AddVenteItem item) async {
-            await provider.updateItem(item);
-          },
-          onRemove: (VenteDetail it) {
-            provider.removeItem(it.id);
+    final venteProvider = Provider.of<VenteProvider>(context, listen: false);
+    return FutureBuilder<ClientUser?>(
+      future: venteProvider.getCurrentUser(),
+      builder: (context, userSnapshot) {
+        if (userSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (userSnapshot.hasError) {
+          return Center(
+            child: Text(
+              'Erreur de chargement de l\'utilisateur: ${userSnapshot.error}',
+            ),
+          );
+        }
+
+        final clientUser = userSnapshot.data;
+
+        final canUpdatePrice =
+            clientUser?.privileges?.any((p) => p.name == Constants.canUpdatePrice) ??
+            false;
+
+        return Consumer<VenteProvider>(
+          builder: (context, provider, child) {
+            final vente = provider.currentVente;
+            final details = vente?.items.content ?? [];
+            return VenteDetailsTable(
+              details: details,
+              canUpdatePrice: canUpdatePrice,
+              saleId: vente?.saleId,
+              onEdit: (AddVenteItem item) async {
+                await provider.updateItem(item);
+              },
+              onRemove: (VenteDetail it) {
+                provider.removeItem(it.id);
+              },
+            );
           },
         );
       },
@@ -60,7 +85,8 @@ class VenteDetailsTable extends StatelessWidget {
               saleId: saleId,
               produitId: detail.produitId,
               quantity: newQuantity,
-              quantitySold: newQuantity, // Assuming quantity sold is the new quantity
+              quantitySold: newQuantity,
+              // Assuming quantity sold is the new quantity
               unitPrice: newPrice,
             );
             onEdit(item);
@@ -144,13 +170,21 @@ class VenteDetailsTable extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit, size: 20, color: Colors.blue,),
+                      icon: const Icon(
+                        Icons.edit,
+                        size: 20,
+                        color: Colors.blue,
+                      ),
                       tooltip: 'Modifier',
                       onPressed: () => _showEditDialog(context, it),
                     ),
                     const SizedBox(width: 6),
                     IconButton(
-                      icon: const Icon(Icons.delete_forever, size: 20, color: Colors.red,),
+                      icon: const Icon(
+                        Icons.delete_forever,
+                        size: 20,
+                        color: Colors.red,
+                      ),
                       tooltip: 'Supprimer',
                       onPressed: () => onRemove(it),
                     ),
@@ -301,10 +335,12 @@ class _EditItemDialogState extends State<_EditItemDialog> {
   @override
   void initState() {
     super.initState();
-    _quantityController =
-        TextEditingController(text: widget.detail.quantity.toString());
-    _priceController =
-        TextEditingController(text: widget.detail.unitPrice.toString());
+    _quantityController = TextEditingController(
+      text: widget.detail.quantity.toString(),
+    );
+    _priceController = TextEditingController(
+      text: widget.detail.unitPrice.toString(),
+    );
   }
 
   @override
@@ -359,8 +395,7 @@ class _EditItemDialogState extends State<_EditItemDialog> {
                   if (value == null || value.isEmpty) {
                     return 'Veuillez entrer un prix';
                   }
-                  if (int.tryParse(value) == null ||
-                      int.parse(value) < 0) {
+                  if (int.tryParse(value) == null || int.parse(value) < 0) {
                     return 'Prix invalide';
                   }
                   return null;
@@ -373,11 +408,11 @@ class _EditItemDialogState extends State<_EditItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: const Text(Constants.btnAnnuler),
         ),
         ElevatedButton(
           onPressed: _submit,
-          child: const Text('Enregistrer'),
+          child: const Text(Constants.btnValider),
         ),
       ],
     );

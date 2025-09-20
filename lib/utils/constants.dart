@@ -16,7 +16,7 @@ class Constants {
   static const String mettreEnAttente = 'Mettre en attente';
   static const String remisePlaceHolder = 'Appliquer une remise';
   static const String remise = 'Remise';
-
+  static const String canUpdatePrice = 'canUpdatePrice';
 
   static void showSnack(BuildContext context, String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -42,5 +42,4 @@ class Constants {
     symbol: 'FCFA',
     decimalDigits: 0,
   ).format(v);
-
 }
