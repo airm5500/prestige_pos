@@ -84,7 +84,7 @@ class SharedService {
   }
 
   ApiResponse<T> _handleHttpError<T>(http.Response response, String endpoint) {
-    print(response.body);
+
     switch (response.statusCode) {
       
       case 400:

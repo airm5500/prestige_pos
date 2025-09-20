@@ -13,16 +13,16 @@ class OfficineService {
     : _sharedService = SharedService(apiClient: apiClient);
 
   Future<ApiResponse<Officine?>> find() async {
-    final storedData = await _loadOfficineStorage();
-    print('Stored Officine Data: $storedData');
+    final storedData = await _loadOfficine();
+
     if (storedData == null) {
       final response = await _sharedService.get<Officine>(
         endpoint: '/common/officine',
         itemParserFromJson: (json) => Officine.fromJson(json),
       );
-      print('Fetched Officine Data: ${response.data}');
+
       if (response.data != null) {
-        await _saveAllModeReglement(response.data!);
+        await _saveOfficine(response.data!);
         return response;
       }
       return ApiResponse.success(storedData);
@@ -31,7 +31,7 @@ class OfficineService {
     }
   }
 
-  Future<Officine?> _loadOfficineStorage() async {
+  Future<Officine?> _loadOfficine() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('officine');
     if (jsonString != null) {
@@ -42,7 +42,7 @@ class OfficineService {
     return null;
   }
 
-  Future<void> _saveAllModeReglement(Officine officine) async {
+  Future<void> _saveOfficine(Officine officine) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = json.encode(officine.toJson());
     await prefs.setString('officine', jsonString);
