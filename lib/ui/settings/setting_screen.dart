@@ -221,6 +221,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 */
 
+import 'package:prestige_pos/provider/theme_provider.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -369,70 +371,82 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(title: const Text('Configuration')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ListView(
-          children: [
-            _buildIpInputRow(
-              controller: _localCtl,
-              label: 'Adresse IP Locale (requis)',
-              pingResult: pingLocal,
-              resultPrefix: 'Local',
-              onPingPressed: () async {
-                setState(() => pingLocal = '...');
-                final result = await _ping(_localCtl.text);
-                setState(() => pingLocal = result);
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildIpInputRow(
-              controller: _remoteCtl,
-              label: 'Adresse IP Distante',
-              pingResult: pingRemote,
-              resultPrefix: 'Distant',
-              onPingPressed: () async {
-                setState(() => pingRemote = '...');
-                final result = await _ping(_remoteCtl.text);
-                setState(() => pingRemote = result);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _appCtl,
-              decoration: const InputDecoration(
-                labelText: "Nom de l'application serveur (ex: laborex)",
-                helperText: 'Modifiable',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _portCtl,
-              decoration: const InputDecoration(labelText: 'Port'),
-              keyboardType: TextInputType.number,
-            ),
-            const Divider(height: 32),
-            TextField(
-              controller: _phoneCtl,
-              decoration: const InputDecoration(
-                labelText: 'Téléphone officine',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _addrCtl,
-              decoration: const InputDecoration(labelText: 'Adresse officine'),
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Utiliser le mode Local (sinon Distant)'),
-              value: !isRemote,
-              onChanged: (v) => setState(() => isRemote = !v),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.save),
-              label: const Text('Enregistrer'),
-            ),
-          ],
+        child: Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return ListView(
+              children: [
+                _buildIpInputRow(
+                  controller: _localCtl,
+                  label: 'Adresse IP Locale (requis)',
+                  pingResult: pingLocal,
+                  resultPrefix: 'Local',
+                  onPingPressed: () async {
+                    setState(() => pingLocal = '...');
+                    final result = await _ping(_localCtl.text);
+                    setState(() => pingLocal = result);
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildIpInputRow(
+                  controller: _remoteCtl,
+                  label: 'Adresse IP Distante',
+                  pingResult: pingRemote,
+                  resultPrefix: 'Distant',
+                  onPingPressed: () async {
+                    setState(() => pingRemote = '...');
+                    final result = await _ping(_remoteCtl.text);
+                    setState(() => pingRemote = result);
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _appCtl,
+                  decoration: const InputDecoration(
+                    labelText: "Nom de l'application serveur (ex: laborex)",
+                    helperText: 'Modifiable',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _portCtl,
+                  decoration: const InputDecoration(labelText: 'Port'),
+                  keyboardType: TextInputType.number,
+                ),
+                const Divider(height: 32),
+                TextField(
+                  controller: _phoneCtl,
+                  decoration: const InputDecoration(
+                    labelText: 'Téléphone officine',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _addrCtl,
+                  decoration: const InputDecoration(labelText: 'Adresse officine'),
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  title: const Text('Utiliser le mode Local (sinon Distant)'),
+                  value: !isRemote,
+                  onChanged: (v) => setState(() => isRemote = !v),
+                ),
+                const Divider(height: 32),
+                SwitchListTile(
+                  title: const Text('Mode sombre'),
+                  value: themeProvider.themeMode == ThemeMode.dark,
+                  onChanged: (isDarkMode) {
+                    themeProvider.toggleTheme(isDarkMode);
+                  },
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Enregistrer'),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

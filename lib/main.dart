@@ -7,6 +7,7 @@ import 'package:prestige_pos/auth/service/auth_service.dart';
 import 'package:prestige_pos/provider/mode_reglement_provider.dart';
 import 'package:prestige_pos/provider/produit_provider.dart';
 import 'package:prestige_pos/provider/remise_provider.dart';
+import 'package:prestige_pos/provider/theme_provider.dart';
 import 'package:prestige_pos/provider/vente_provider.dart';
 
 import 'package:prestige_pos/service/mode_reglement_service.dart';
@@ -28,6 +29,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         Provider<ApiClient>.value(value: apiClient),
         Provider<ModeReglementService>(
           create: (_) => ModeReglementService(apiClient: apiClient),
@@ -44,7 +46,6 @@ void main() async {
         Provider<VenteService>(
           create: (_) => VenteService(apiClient: apiClient),
         ),
-
         Provider<ReceiptService>(
           create: (context) =>
               ReceiptService(officineService: context.read<OfficineService>()),
@@ -58,7 +59,6 @@ void main() async {
           create: (context) =>
               ModeReglementProvider(context.read<ModeReglementService>()),
         ),
-
         ChangeNotifierProvider(
           create: (context) => ProduitProvider(context.read<ProduitService>()),
         ),
@@ -82,16 +82,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navKey,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.teal),
-      darkTheme: ThemeData.dark(useMaterial3: true),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const StartGate(),
-        VenteScreen.routeName: (context) =>
-            VenteScreen(receiptService: context.read<ReceiptService>()),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          navigatorKey: navKey,
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.blueGrey,
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorSchemeSeed: Colors.blueGrey,
+          ),
+          themeMode: themeProvider.themeMode,
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const StartGate(),
+            VenteScreen.routeName: (context) =>
+                VenteScreen(receiptService: context.read<ReceiptService>()),
+            '/settings': (context) => const SettingsScreen(),
+          },
+        );
       },
     );
   }
