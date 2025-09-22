@@ -24,6 +24,9 @@ ClotureVente _$ClotureVenteFromJson(Map<String, dynamic> json) => ClotureVente(
   data: json['data'] == null
       ? null
       : Payment.fromJson(json['data'] as Map<String, dynamic>),
+  reglements: (json['reglements'] as List<dynamic>)
+      .map((e) => VenteReglement.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$ClotureVenteToJson(ClotureVente instance) =>
@@ -43,4 +46,5 @@ Map<String, dynamic> _$ClotureVenteToJson(ClotureVente instance) =>
       'totalRecap': instance.totalRecap,
       'montantPaye': instance.montantPaye,
       'data': instance.data,
+      'reglements': instance.reglements,
     };

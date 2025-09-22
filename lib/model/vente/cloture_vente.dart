@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:prestige_pos/model/vente/banque_info.dart';
 import 'package:prestige_pos/model/vente/create_response.dart';
 import 'package:prestige_pos/model/vente/payment.dart';
+import 'package:prestige_pos/model/vente/vente_reglement.dart';
 
 part 'cloture_vente.g.dart';
 
@@ -22,6 +23,7 @@ class ClotureVente {
   final int? totalRecap;
   final int? montantPaye;
   final Payment? data;
+  final List<VenteReglement> reglements;
 
   ClotureVente({
     required this.venteId,
@@ -39,6 +41,7 @@ class ClotureVente {
     this.totalRecap,
     this.montantPaye,
     this.data,
+    required this.reglements,
   });
 
   factory ClotureVente.fromJson(Map<String, dynamic> json) =>
@@ -60,6 +63,7 @@ class ClotureVente {
       lieux: '',
       nom: banqueInfo?.nom,
       montantPaye: vente.amount,
+      reglements: [VenteReglement.newVenteReglement(modeId, vente.amount)],
     );
   }
 }

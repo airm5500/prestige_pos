@@ -20,4 +20,13 @@ class VenteReglement {
       _$VenteReglementFromJson(json);
 
   Map<String, dynamic> toJson() => _$VenteReglementToJson(this);
+
+  factory VenteReglement.newVenteReglement(String modeId, int amount) {
+    return VenteReglement(
+      montant: amount,
+      typeReglementId: modeId,
+      montantAttentu: amount,
+      typeReglement: modeId,
+    );
+  }
 }
