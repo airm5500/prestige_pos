@@ -19,10 +19,7 @@ class ReceiptService {
     try {
       final ok = await SunmiPrinter.bindingPrinter();
       if (ok != true) {
-        Constants.showSnack(
-          context,
-          "Impossible de se lier à l'imprimante ",
-        );
+        Constants.showSnack(context, "Impossible de se lier à l'imprimante ");
         return false;
       }
       try {
@@ -41,8 +38,9 @@ class ReceiptService {
   Future<bool> printTicket(
     BuildContext context,
     CreateResponse currentSale,
-    ModeReglement modeReglement,
-  ) async {
+    ModeReglement modeReglement, {
+    int copies = 2,
+  }) async {
     if (!await _ensurePrinter(context)) return false;
 
     final officineResponse = await _officineService.find();
@@ -52,98 +50,116 @@ class ReceiptService {
         context,
         "Impossible de récupérer les infos de l'officine",
       );
-      await SunmiPrinter.exitTransactionPrint(true);
       return false;
     }
+
     try {
-      await SunmiPrinter.startTransactionPrint(true);
+      for (int i = 0; i < copies; i++) {
+        await SunmiPrinter.startTransactionPrint(true);
 
-      const int cols = 32;
-      String line([String ch = '-']) => List.filled(cols, ch).join();
-      String fit(String s, int len) {
-        final t = s.replaceAll("\n", " ");
-        if (t.runes.length <= len) return t.padRight(len);
-        return String.fromCharCodes(t.runes.take(len));
-      }
+        const int cols = 32;
+        String line([String ch = '-']) => List.filled(cols, ch).join();
+        String fit(String s, int len) {
+          final t = s.replaceAll("\n", " ");
+          if (t.runes.length <= len) return t.padRight(len);
+          return String.fromCharCodes(t.runes.take(len));
+        }
 
-      String r(int v, int len) => Constants.formatNumber(v).padLeft(len);
+        String r(int v, int len) => Constants.formatNumber(v).padLeft(len);
+        String printText(int v) => Constants.formatNumber(v);
 
-      // --- HEADER ---
-      await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
-      final head = officine.name ;
-      await SunmiPrinter.printText(
-        head.toUpperCase(),
-        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
-      );
-      if ((officine.address ?? '').isNotEmpty) {
-        await SunmiPrinter.printText(officine.address!, style: SunmiStyle());
-      }
-      if ((officine.phone ?? '').isNotEmpty) {
+        // --- HEADER ---
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+        final head = officine.name;
         await SunmiPrinter.printText(
-          'Tél: ${officine.phone!}',
-          style: SunmiStyle(),
+          head.toUpperCase(),
+          style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
         );
-      }
+        if ((officine.address ?? '').isNotEmpty) {
+          await SunmiPrinter.printText(officine.address!, style: SunmiStyle());
+        }
+        if ((officine.phone ?? '').isNotEmpty) {
+          await SunmiPrinter.printText(
+            'Tél: ${officine.phone!}',
+            style: SunmiStyle(),
+          );
+        }
 
-      await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
-      await SunmiPrinter.printText(line());
-      await SunmiPrinter.printText(
-        "Date: ${DateFormat("dd/MM/yyyy HH:mm").format(DateTime.now())}",
-      );
-      if ((currentSale.transactionNumber ?? '').isNotEmpty) {
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
+        await SunmiPrinter.printText(line());
         await SunmiPrinter.printText(
-          "Ticket: ${currentSale.transactionNumber}",
+          "Date: ${DateFormat("dd/MM/yyyy HH:mm").format(DateTime.now())}",
         );
+        if ((currentSale.transactionNumber ?? '').isNotEmpty) {
+          await SunmiPrinter.printText(
+            "Ticket: ${currentSale.transactionNumber}",
+          );
+        }
+        await SunmiPrinter.printText(line());
+
+        // --- ITEMS ---
+        await SunmiPrinter.printText(
+          fit('Article', 18) + fit('Qt', 2) + fit('PU', 5) + fit('Total', 7),
+          style: SunmiStyle(bold: true),
+        );
+        await SunmiPrinter.printText(line('.'));
+
+        for (final item in currentSale.items.content) {
+          final tag = ' *(${item.quantity})';
+          final maxName = cols - tag.length;
+          final name = fit(item.produitName, maxName);
+          await SunmiPrinter.printText(
+            name + tag,
+            style: SunmiStyle(fontSize: SunmiFontSize.SM),
+          );
+          final left = ' ' * 20;
+          final pu = r(item.unitPrice, 5);
+          final tot = r(item.amount, 7);
+          await SunmiPrinter.printText(left + pu + tot);
+        }
+        await SunmiPrinter.printText(line());
+
+        // --- TOTALS ---
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT);
+        await SunmiPrinter.printText('Total: ${printText(currentSale.amount)}');
+        if ((currentSale.discount ?? 0) > 0) {
+          await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
+          await SunmiPrinter.printText(
+            'Remise: ${printText(currentSale.discount!)}',
+          );
+        }
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT);
+        await SunmiPrinter.printText(
+          'NET A PAYER: ${printText(currentSale.montantNet ?? currentSale.amount)}',
+          style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
+        );
+        await SunmiPrinter.printText(line());
+
+        await SunmiPrinter.printText(
+          'REGLEMENT: ${fit(modeReglement.libelle, 10)}',
+          style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
+        );
+
+        await SunmiPrinter.printText(line());
+
+        await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+        if (currentSale.transactionNumber != null) {
+          await SunmiPrinter.printQRCode(currentSale.transactionNumber!);
+          await SunmiPrinter.printText(currentSale.transactionNumber!);
+        }
+
+        await SunmiPrinter.lineWrap(3);
+        try {
+          await SunmiPrinter.cut();
+        } catch (_) {}
+
+        await SunmiPrinter.exitTransactionPrint(true);
       }
-      await SunmiPrinter.printText(line());
-
-      // --- ITEMS ---
-      await SunmiPrinter.printText(
-        fit('Article', 18) + fit('Qt', 2) + fit('PU', 5) + fit('Total', 7),
-        style: SunmiStyle(bold: true),
-      );
-      await SunmiPrinter.printText(line('.'));
-
-      for (final item in currentSale.items.content) {
-        final name = fit(item.produitName, 18);
-        final qty = r(item.quantity, 2);
-        final pu = r(item.unitPrice, 5);
-        final total = r(item.amount, 7);
-        await SunmiPrinter.printText(name + qty + pu + total);
-      }
-      await SunmiPrinter.printText(line());
-
-      // --- TOTALS ---
-      await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT);
-      await SunmiPrinter.printText('Total: ${r(currentSale.amount, 10)}');
-      if ((currentSale.discount ?? 0) > 0) {
-        await SunmiPrinter.printText('Remise: ${r(currentSale.discount!, 10)}');
-      }
-      await SunmiPrinter.printText(
-        'NET A PAYER: ${r(currentSale.montantNet ?? currentSale.amount, 10)}',
-        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
-      );
-      await SunmiPrinter.printText(line());
-
-      await SunmiPrinter.printText(
-        'REGLEMENT: ${fit(modeReglement.libelle, 10)}',
-        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.MD),
-      );
-
-      await SunmiPrinter.printText(line());
-
-
-      await SunmiPrinter.lineWrap(2);
     } catch (e) {
       Constants.showSnack(context, 'Impression ticket: $e');
       return false;
-    } finally {
-      try {
-        await SunmiPrinter.exitTransactionPrint(true);
-      } catch (_) {
-
-      }
     }
+
     return true;
   }
 }
