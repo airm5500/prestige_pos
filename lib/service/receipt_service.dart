@@ -79,7 +79,7 @@ class ReceiptService {
     }
 
     try {
-      // Vérification du statut
+
       final status = await _checkPrinterStatus();
       if (status != PrinterStatus.READY) {
         Constants.showSnack(
@@ -163,7 +163,7 @@ class ReceiptService {
       }
       await _printer.printText(
         text:
-            'NET A PAYER: ${r(currentSale.montantNet ?? currentSale.amount, 10)}',
+            'TOTAL A PAYER: ${r(currentSale.montantNet ?? currentSale.amount, 10)}',
         style: SunmiTextStyle(
           bold: true,
           align: SunmiPrintAlign.RIGHT,
