@@ -11,6 +11,7 @@ import 'package:prestige_pos/model/vente/vente_detail.dart';
 import 'package:prestige_pos/model/vente/vente_detail_wrapper.dart';
 import 'package:prestige_pos/provider/vente_provider.dart';
 import 'package:prestige_pos/ui/vente/mode_reglement_selector.dart';
+import 'package:prestige_pos/ui/vente/prevente_list_tab.dart';
 import 'package:prestige_pos/ui/vente/remise_selector.dart';
 import 'package:prestige_pos/ui/vente/search_product_widget.dart';
 import 'package:prestige_pos/ui/vente/vente_details_table.dart';
@@ -18,7 +19,7 @@ import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:prestige_pos/main.dart';
-
+import 'package:prestige_pos/utils/app_color.dart';
 import 'package:prestige_pos/service/receipt_service.dart';
 
 class VenteScreen extends StatefulWidget {
@@ -39,13 +40,21 @@ class _VenteScreenState extends State<VenteScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_handleTabSelection);
   }
 
   void _handleTabSelection() {
-    if (_tabController.indexIsChanging) {
-      context.read<VenteProvider>().createNewVente();
+    if (_tabController.indexIsChanging) return;
+
+    final provider = context.read<VenteProvider>();
+    if (_tabController.index == 0 || _tabController.index == 1) {
+      if (!provider.isFromPrevente) {
+        provider.createNewVente();
+      }
+    }
+    if (_tabController.index != 2) {
+      provider.resetPreventeFlag();
     }
   }
 
@@ -66,7 +75,7 @@ class _VenteScreenState extends State<VenteScreen>
           tabs: const [
             Tab(text: Constants.venteTab),
             Tab(text: Constants.preventeTab),
-            // Tab(text: 'Liste Préventes'),
+            Tab(text: Constants.preventeListTab),
           ],
         ),
       ),
@@ -75,6 +84,7 @@ class _VenteScreenState extends State<VenteScreen>
         children: [
           VenteTab(receiptService: widget.receiptService, isPrevente: false),
           VenteTab(receiptService: widget.receiptService, isPrevente: true),
+          PreventeListTab(tabController: _tabController),
         ],
       ),
     );
@@ -104,14 +114,6 @@ class _VenteTabState extends State<VenteTab> {
     _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VenteProvider>().createNewVente();
-    });
   }
 
   @override
@@ -226,8 +228,42 @@ class _VenteTabState extends State<VenteTab> {
 
   Widget _buildControlsColumn() {
     return SearchProductWidget(
-      onProductSelected: (SearchProduitResult product) {
-        _showQuantityDialog(product);
+      onProductSelected: (SearchProduitResult product) async {
+        if (product.quantity < 1 && !widget.isPrevente) {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return AlertDialog(
+                title: const Text('Produit hors stock'),
+                content: const Text(
+                  'Ce produit est hors stock. Voulez-vous quand même l\'ajouter?',
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Non'),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(false);
+                    },
+                  ),
+                  ElevatedButton(
+                    child: const Text('Oui'),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(true);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (!mounted) return;
+
+          if (confirmed == true) {
+            _showQuantityDialog(product);
+          }
+        } else {
+          _showQuantityDialog(product);
+        }
       },
       showStocks: true,
       focusNode: _searchFocusNode,
@@ -426,11 +462,62 @@ class _VenteTabState extends State<VenteTab> {
     );
   }
 
+  void _handleQuantitySubmission(
+    String value,
+    SearchProduitResult product,
+  ) async {
+    final int? requestedQuantity = int.tryParse(value);
+    if (requestedQuantity == null || requestedQuantity <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez saisir une quantité valide.')),
+      );
+      return;
+    }
+
+    if (requestedQuantity > product.quantity && !widget.isPrevente) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext alertContext) {
+          return AlertDialog(
+            title: const Text('Quantité en stock insuffisante'),
+            content: Text(
+              'La quantité demandée ($requestedQuantity) est supérieure à la quantité disponible (${product.quantity}).\n\nVoulez-vous ajouter la quantité maximale disponible?',
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Annuler'),
+                onPressed: () {
+                  Navigator.of(alertContext).pop(false);
+                },
+              ),
+              ElevatedButton(
+                child: const Text('Ajouter max'),
+                onPressed: () {
+                  Navigator.of(alertContext).pop(true);
+                },
+              ),
+            ],
+          );
+        },
+      );
+
+      if (!mounted) return;
+
+      if (confirmed == true) {
+        _submitQuantity(product, product.quantity.toString());
+      }
+    } else {
+      _submitQuantity(product, value);
+    }
+  }
+
   void _showQuantityDialog(SearchProduitResult product) {
     final TextEditingController quantityController = TextEditingController(
       text: '1',
     );
-    showDialog(
+
+    showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
@@ -442,10 +529,7 @@ class _VenteTabState extends State<VenteTab> {
             decoration: const InputDecoration(
               labelText: Constants.qunatityLabel,
             ),
-            onSubmitted: (value) {
-              Navigator.of(dialogContext).pop();
-              _submitQuantity(product, value);
-            },
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
           ),
           actions: <Widget>[
             TextButton(
@@ -457,15 +541,17 @@ class _VenteTabState extends State<VenteTab> {
             ElevatedButton(
               child: const Text(Constants.btnAdd),
               onPressed: () {
-                final String quantity = quantityController.text;
-                Navigator.of(dialogContext).pop();
-                _submitQuantity(product, quantity);
+                Navigator.of(dialogContext).pop(quantityController.text);
               },
             ),
           ],
         );
       },
-    );
+    ).then((value) {
+      if (value != null) {
+        _handleQuantitySubmission(value, product);
+      }
+    });
   }
 
   void _showFinalizeSheet() {

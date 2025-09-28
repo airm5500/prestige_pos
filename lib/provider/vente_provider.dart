@@ -18,7 +18,7 @@ class VenteProvider extends ChangeNotifier {
   final VenteService _venteService;
 
   VenteProvider({required VenteService venteService})
-    : _venteService = venteService;
+      : _venteService = venteService;
 
   CreateResponse? _currentVente;
 
@@ -46,6 +46,8 @@ class VenteProvider extends ChangeNotifier {
 
   ModeReglement? get selectedModeReglement => _selectedModeReglement;
 
+  bool isFromPrevente = false;
+
   Future<ClientUser?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString('currentUser');
@@ -54,6 +56,16 @@ class VenteProvider extends ChangeNotifier {
       return ClientUser.fromJson(jsonObj);
     }
     return null;
+  }
+
+  void loadVente(CreateResponse vente) {
+    _currentVente = vente;
+    isFromPrevente = true;
+    notifyListeners();
+  }
+
+  void resetPreventeFlag() {
+    isFromPrevente = false;
   }
 
   void updateCanUpdatePrice(bool value) {
@@ -95,6 +107,7 @@ class VenteProvider extends ChangeNotifier {
     _setCurrentVente(null);
     _setFinalyseResponse(null);
     clearError();
+    resetPreventeFlag();
   }
 
   void updateSelectedModeReglement(ModeReglement mode) {

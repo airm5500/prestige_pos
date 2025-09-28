@@ -27,6 +27,7 @@ class Constants {
   static const String venteTitle = 'Nouvelle vente';
   static const String venteTab = 'Ventes';
   static const String preventeTab = 'Pré-ventes';
+  static const String preventeListTab = 'Liste pré-ventes';
   static const String showStock = 'showStock';
   static const String homeBtnVenteLabel = 'Pré/Vente';
   static const String homeBtnProductEvalLabel = 'Évaluation vente article';
@@ -34,6 +35,7 @@ class Constants {
   static const String title = 'Prestige Vente';
   static const String preventeAlertTitle = 'Imprimer le ticket de pré-vente?';
   static const String preventeReceiptLabel = 'Voulez-vous imprimer le ticket pour cette pré-vente?';
+  static const String stockInsuffisantMsg ='Quantité en stock insuffisante';
 
   static void showSnack(BuildContext context, String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

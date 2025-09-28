@@ -12,20 +12,31 @@ class CreateResponse {
   final String? transactionNumber;
   final int? discount;
   final int? montantNet;
-   String status;
+  final String? userName;
+  final String? heure;
+  final String? transactionDate;
+  final String? remiseId;
+  final String? saleRef;
+  String status;
 
   CreateResponse({
     required this.saleId,
     required this.amount,
     required this.items,
     this.transactionNumber,
+    this.userName,
+    this.heure,
+    this.transactionDate,
+    this.remiseId,
+    this.saleRef,
     this.discount,
     this.montantNet,
     this.status = 'PROGRESS',
-  }) ;
-  bool get isCompleted => status == 'CLOSED';
-  bool get isInProgress => status == 'PROGRESS';
+  });
 
+  bool get isCompleted => status == 'CLOSED';
+
+  bool get isInProgress => status == 'PROGRESS';
 
   factory CreateResponse.fromJson(Map<String, dynamic> json) =>
       _$CreateResponseFromJson(json);

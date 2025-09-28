@@ -1,10 +1,11 @@
-import 'dart:async';
+
 
 import 'package:flutter/material.dart';
 
 import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/auth/service/auth_service.dart';
 import 'package:prestige_pos/provider/mode_reglement_provider.dart';
+import 'package:prestige_pos/provider/prevente_provider.dart';
 import 'package:prestige_pos/provider/produit_provider.dart';
 import 'package:prestige_pos/provider/remise_provider.dart';
 import 'package:prestige_pos/provider/theme_provider.dart';
@@ -15,6 +16,7 @@ import 'package:prestige_pos/service/officine_service.dart';
 import 'package:prestige_pos/service/produit_service.dart';
 import 'package:prestige_pos/service/receipt_service.dart';
 import 'package:prestige_pos/service/remise_service.dart';
+import 'package:prestige_pos/service/vente_data_service.dart';
 import 'package:prestige_pos/service/vente_service.dart';
 import 'package:prestige_pos/ui/home_screen.dart';
 import 'package:prestige_pos/ui/settings/setting_screen.dart';
@@ -31,7 +33,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+
         Provider<ApiClient>.value(value: apiClient),
         Provider<ModeReglementService>(
           create: (_) => ModeReglementService(apiClient: apiClient),
@@ -52,6 +54,13 @@ void main() async {
           create: (context) =>
               ReceiptService(officineService: context.read<OfficineService>(),authService: context.read<AuthService>()),
         ),
+
+        Provider<VenteDataService>(
+          create: (_) => VenteDataService(apiClient: apiClient),
+        ),
+
+
+
         ChangeNotifierProvider<VenteProvider>(
           create: (context) =>
               VenteProvider(venteService: context.read<VenteService>()),
@@ -64,9 +73,14 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => ProduitProvider(context.read<ProduitService>()),
         ),
+
         ChangeNotifierProvider(
           create: (context) => RemiseProvider(context.read<RemiseService>()),
         ),
+        ChangeNotifierProvider(
+          create: (context) => PreventeProvider(context.read<VenteDataService>()),
+        ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider())
       ],
       child: const MyApp(),
     ),
