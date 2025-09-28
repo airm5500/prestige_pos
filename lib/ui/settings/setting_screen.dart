@@ -228,6 +228,7 @@ class SettingsScreen extends StatefulWidget {
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
+  static const String routeName = '/settings';
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {

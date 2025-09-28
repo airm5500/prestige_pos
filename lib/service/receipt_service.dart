@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:prestige_pos/auth/service/auth_service.dart';
 import 'package:prestige_pos/model/vente/create_response.dart';
 import 'package:prestige_pos/model/vente/mode_reglement.dart';
 import 'package:prestige_pos/service/officine_service.dart';
@@ -11,9 +12,12 @@ import 'package:sunmi_printer_plus/sunmi_style.dart';
 
 class ReceiptService {
   final OfficineService _officineService;
+  final AuthService _authService;
 
-  ReceiptService({required OfficineService officineService})
-    : _officineService = officineService;
+  ReceiptService(
+      {required OfficineService officineService, required AuthService authService})
+      : _officineService = officineService,
+        _authService = authService;
 
   Future<bool> _ensurePrinter(BuildContext context) async {
     try {
@@ -39,12 +43,13 @@ class ReceiptService {
     BuildContext context,
     CreateResponse currentSale,
     ModeReglement modeReglement, {
-    int copies = 2,
+    int copies = 1,
   }) async {
     if (!await _ensurePrinter(context)) return false;
 
     final officineResponse = await _officineService.find();
     final officine = officineResponse.data;
+    final currentUser = _authService.currentUser;
     if (officine == null) {
       Constants.showSnack(
         context,
@@ -87,6 +92,9 @@ class ReceiptService {
 
         await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
         await SunmiPrinter.printText(line());
+        if (currentUser != null) {
+          await SunmiPrinter.printText("Vendeur: ${currentUser.firstname}");
+        }
         await SunmiPrinter.printText(
           "Date: ${DateFormat("dd/MM/yyyy HH:mm").format(DateTime.now())}",
         );
@@ -125,7 +133,7 @@ class ReceiptService {
         if ((currentSale.discount ?? 0) > 0) {
           await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
           await SunmiPrinter.printText(
-            'Remise: ${printText(currentSale.discount!)}',
+            'REMISE: ${printText(currentSale.discount!)}',
           );
         }
         await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT);
@@ -160,6 +168,78 @@ class ReceiptService {
       return false;
     }
 
+    return true;
+  }
+
+  Future<bool> printPreventeReceipt({
+    required BuildContext context,
+    required CreateResponse currentSale,
+  }) async {
+    if (!await _ensurePrinter(context)) return false;
+
+    final officineResponse = await _officineService.find();
+    final officine = officineResponse.data;
+    final currentUser = _authService.currentUser;
+    if (officine == null) {
+      Constants.showSnack(
+        context,
+        "Impossible de récupérer les infos de l'officine",
+      );
+      return false;
+    }
+    try {
+      await SunmiPrinter.startTransactionPrint(true);
+
+      String line([String ch = '-']) => List.filled(32, ch).join();
+
+      // --- Entête ---
+      await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);
+      await SunmiPrinter.printText(
+        officine.name.toUpperCase(),
+        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.LG),
+      );
+      await SunmiPrinter.printText(officine.name);
+      await SunmiPrinter.printText(line());
+      await SunmiPrinter.printText(
+        'TICKET DE PRE-VENTE',
+        style: SunmiStyle(bold: true),
+      );
+      await SunmiPrinter.printText(line());
+
+      // --- Total ---
+      await SunmiPrinter.printText(
+        'NET A PAYER',
+        style: SunmiStyle(fontSize: SunmiFontSize.MD),
+      );
+
+      await SunmiPrinter.printText(
+        Constants.formatNumber(currentSale.montantNet ?? currentSale.amount),
+        style: SunmiStyle(bold: true, fontSize: SunmiFontSize.XL),
+      );
+      await SunmiPrinter.printText(line());
+
+      // --- QR Code et Date (sur des lignes séparées pour plus de fiabilité) ---
+
+      await SunmiPrinter.printText(line());
+
+      await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);
+      if (currentSale.transactionNumber != null) {
+        await SunmiPrinter.printQRCode(currentSale.transactionNumber!, size: 5);
+        await SunmiPrinter.printText(currentSale.transactionNumber!);
+      }
+
+      await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT);
+      await SunmiPrinter.printText(
+        DateFormat("dd/MM/yyyy HH:mm").format(DateTime.now()),
+      );
+
+      await SunmiPrinter.lineWrap(3);
+      await SunmiPrinter.cut();
+      await SunmiPrinter.exitTransactionPrint(true);
+    } catch (e) {
+      Constants.showSnack(context, 'Erreur d\'impression: $e');
+      return false;
+    }
     return true;
   }
 }

@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:prestige_pos/auth/service/api_client.dart';
-
 import 'package:prestige_pos/auth/service/jwt_service.dart';
 import 'package:prestige_pos/model/client_user.dart';
 
@@ -77,7 +78,9 @@ class AuthService extends ChangeNotifier {
       final password = apiClient.password;
 
       if (username != null && password != null) {
-        final token = await JwtService().getToken(username, password);
+        final token = await JwtService()
+            .getToken(username, password)
+            .timeout(const Duration(seconds: 10));
 
         if (token != null) {
           apiClient.token = token;
@@ -89,6 +92,9 @@ class AuthService extends ChangeNotifier {
               'Connexion automatique impossible, veuillez vous reconnecter.';
         }
       }
+    } on TimeoutException {
+      _isAuthenticated = false;
+      _errorMessage = 'Le serveur a mis trop de temps à répondre.';
     } catch (e) {
       _isAuthenticated = false;
       _errorMessage = 'Erreur lors de la connexion automatique';

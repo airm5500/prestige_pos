@@ -129,66 +129,56 @@ class VenteDetailsTable extends StatelessWidget {
       itemBuilder: (context, index) {
         final it = details[index];
         return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4.0),
+          margin: const EdgeInsets.symmetric(vertical: 1.0),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  it.produitName,
+                  '${it.produitName} - ${it.produitCip}',
+
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const Divider(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                  Text('${it.quantity} x ${Constants.formatNumber(it.unitPrice)} = ${Constants.formatNumber(it.amount)}',  style: const TextStyle(fontSize: 15)),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text('Qté: ${it.quantity}'),
-                          const SizedBox(width: 16),
-                          Text('PU: ${Constants.formatNumber(it.unitPrice)}'),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.edit,
+                              size: 20,
+                              color: Colors.blue,
+                            ),
+                            tooltip: 'Modifier',
+                            onPressed: () => _showEditDialog(context, it),
+                          ),
+                          const SizedBox(width: 2),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.delete_forever,
+                              size: 20,
+                              color: Colors.red,
+                            ),
+                            tooltip: 'Supprimer',
+                            onPressed: () => onRemove(it),
+                          ),
                         ],
-                      ),
-                      Text(
-                        Constants.formatNumber(it.amount),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
                       ),
                     ],
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        size: 20,
-                        color: Colors.blue,
-                      ),
-                      tooltip: 'Modifier',
-                      onPressed: () => _showEditDialog(context, it),
-                    ),
-                    const SizedBox(width: 6),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete_forever,
-                        size: 20,
-                        color: Colors.red,
-                      ),
-                      tooltip: 'Supprimer',
-                      onPressed: () => onRemove(it),
-                    ),
-                  ],
                 ),
               ],
             ),

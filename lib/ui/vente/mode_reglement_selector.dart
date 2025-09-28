@@ -6,7 +6,7 @@ import 'package:prestige_pos/provider/mode_reglement_provider.dart';
 class ModeReglementSelector extends StatefulWidget {
   final Function(ModeReglement) onSelected;
   final ModeReglement? initialValue;
-  final bool useBottomSheet; // Pour choisir entre Dropdown ou BottomSheet
+  final bool useBottomSheet; // Pour choisir entre dialog ou BottomSheet
 
   const ModeReglementSelector({
     super.key,
@@ -62,6 +62,35 @@ class _ModeReglementSelectorState extends State<ModeReglementSelector> {
     );
   }
 
+  void _openDialog(List<ModeReglement> modes) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Sélectionner un mode de règlement'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: modes.length,
+              itemBuilder: (_, i) {
+                final mode = modes[i];
+                return ListTile(
+                  title: Text(mode.libelle),
+                  onTap: () {
+                    setState(() => selected = mode);
+                    widget.onSelected(mode);
+                    Navigator.pop(dialogContext);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ModeReglementProvider>(
@@ -85,25 +114,22 @@ class _ModeReglementSelectorState extends State<ModeReglementSelector> {
 
         final modes = provider.modeReglements;
 
-        // --- Version Dropdown
+        // --- Version Dialog
         if (!widget.useBottomSheet) {
-          return DropdownButtonFormField<ModeReglement>(
-            value: selected,
-            items: modes
-                .map(
-                  (mode) =>
-                      DropdownMenuItem(value: mode, child: Text(mode.libelle)),
-                )
-                .toList(),
-            onChanged: (mode) {
-              if (mode != null) {
-                setState(() => selected = mode);
-                widget.onSelected(mode);
-              }
-            },
-            decoration: const InputDecoration(
-              labelText: "Mode de règlement",
-              border: OutlineInputBorder(),
+          return InkWell(
+            onTap: () => _openDialog(modes),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: "Mode de règlement",
+                border: OutlineInputBorder(),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(selected?.libelle ?? "Sélectionner un mode"),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
             ),
           );
         }

@@ -16,9 +16,11 @@ import 'package:prestige_pos/service/produit_service.dart';
 import 'package:prestige_pos/service/receipt_service.dart';
 import 'package:prestige_pos/service/remise_service.dart';
 import 'package:prestige_pos/service/vente_service.dart';
-import 'package:prestige_pos/ui/login/login_screen.dart';
+import 'package:prestige_pos/ui/home_screen.dart';
 import 'package:prestige_pos/ui/settings/setting_screen.dart';
+import 'package:prestige_pos/ui/splash_screen.dart';
 import 'package:prestige_pos/ui/vente/vente_screen.dart';
+import 'package:prestige_pos/utils/constants.dart';
 
 import 'package:provider/provider.dart';
 
@@ -48,7 +50,7 @@ void main() async {
         ),
         Provider<ReceiptService>(
           create: (context) =>
-              ReceiptService(officineService: context.read<OfficineService>()),
+              ReceiptService(officineService: context.read<OfficineService>(),authService: context.read<AuthService>()),
         ),
         ChangeNotifierProvider<VenteProvider>(
           create: (context) =>
@@ -73,8 +75,8 @@ void main() async {
 
 final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
 
-void showSnack(BuildContext context, String msg) =>
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+/*void showSnack(BuildContext context, String msg) =>
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));*/
 
 // ======= App =======
 class MyApp extends StatelessWidget {
@@ -85,8 +87,11 @@ class MyApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
+          title: Constants.title,
           navigatorKey: navKey,
           debugShowCheckedModeBanner: false,
+
+          // theme: themeProvider.lightTheme,
           theme: ThemeData(
             useMaterial3: true,
             colorSchemeSeed: Colors.blueGrey,
@@ -99,66 +104,14 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           initialRoute: '/',
           routes: {
-            '/': (context) => const StartGate(),
+            '/': (context) => const SplashScreen(),
+            HomeScreen.routeName: (context) => const HomeScreen(),
             VenteScreen.routeName: (context) =>
                 VenteScreen(receiptService: context.read<ReceiptService>()),
-            '/settings': (context) => const SettingsScreen(),
+            SettingsScreen.routeName: (context) => const SettingsScreen(),
           },
         );
       },
     );
   }
-}
-
-// ======= StartGate =======
-class StartGate extends StatefulWidget {
-  const StartGate({super.key});
-
-  @override
-  State<StartGate> createState() => _StartGateState();
-}
-
-class _StartGateState extends State<StartGate> {
-  @override
-  void initState() {
-    super.initState();
-    _bootstrap();
-  }
-
-  Future<void> _bootstrap() async {
-    final authService = context.read<AuthService>();
-    final apiClient = await ApiClient.init();
-
-    if ((apiClient.localIp == null || apiClient.localIp!.isEmpty) &&
-        (apiClient.remoteIp == null || apiClient.remoteIp!.isEmpty)) {
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-      );
-      return;
-    }
-    if (apiClient.rememberMe &&
-        apiClient.username != null &&
-        apiClient.password != null) {
-      await authService.loginWithJwt(
-        apiClient.username!.trim(),
-        apiClient.password!.trim(),
-      );
-    }
-
-    if (!mounted) return;
-    if (authService.isAuthenticated) {
-      Navigator.pushReplacementNamed(context, VenteScreen.routeName);
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator()));
 }

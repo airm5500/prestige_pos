@@ -8,7 +8,6 @@ class JwtService {
     final apiClient = await ApiClient.init();
     final response = await http.post(
       Uri.parse(apiClient.authUrl),
-      //  Uri.parse('http://192.168.1.51:8780/auth/token'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
