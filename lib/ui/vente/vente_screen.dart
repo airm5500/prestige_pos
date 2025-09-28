@@ -17,9 +17,7 @@ import 'package:prestige_pos/ui/vente/search_product_widget.dart';
 import 'package:prestige_pos/ui/vente/vente_details_table.dart';
 import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart';
 import 'package:prestige_pos/main.dart';
-import 'package:prestige_pos/utils/app_color.dart';
 import 'package:prestige_pos/service/receipt_service.dart';
 
 class VenteScreen extends StatefulWidget {
@@ -48,12 +46,7 @@ class _VenteScreenState extends State<VenteScreen>
     if (_tabController.indexIsChanging) return;
 
     final provider = context.read<VenteProvider>();
-    if (_tabController.index == 0 || _tabController.index == 1) {
-      if (!provider.isFromPrevente) {
-        provider.createNewVente();
-      }
-    }
-    if (_tabController.index != 2) {
+    if (provider.isFromPrevente) {
       provider.resetPreventeFlag();
     }
   }
@@ -229,41 +222,7 @@ class _VenteTabState extends State<VenteTab> {
   Widget _buildControlsColumn() {
     return SearchProductWidget(
       onProductSelected: (SearchProduitResult product) async {
-        if (product.quantity < 1 && !widget.isPrevente) {
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (BuildContext dialogContext) {
-              return AlertDialog(
-                title: const Text('Produit hors stock'),
-                content: const Text(
-                  'Ce produit est hors stock. Voulez-vous quand même l\'ajouter?',
-                ),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('Non'),
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(false);
-                    },
-                  ),
-                  ElevatedButton(
-                    child: const Text('Oui'),
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop(true);
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-
-          if (!mounted) return;
-
-          if (confirmed == true) {
-            _showQuantityDialog(product);
-          }
-        } else {
-          _showQuantityDialog(product);
-        }
+        _showQuantityDialog(product);
       },
       showStocks: true,
       focusNode: _searchFocusNode,
@@ -470,29 +429,29 @@ class _VenteTabState extends State<VenteTab> {
     if (requestedQuantity == null || requestedQuantity <= 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez saisir une quantité valide.')),
+        const SnackBar(content: Text(Constants.inavlideNumberInputLabel)),
       );
       return;
     }
 
-    if (requestedQuantity > product.quantity && !widget.isPrevente) {
+    if (requestedQuantity > product.quantity) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (BuildContext alertContext) {
           return AlertDialog(
-            title: const Text('Quantité en stock insuffisante'),
+            title: const Text(Constants.stockInsuffisantMsg),
             content: Text(
-              'La quantité demandée ($requestedQuantity) est supérieure à la quantité disponible (${product.quantity}).\n\nVoulez-vous ajouter la quantité maximale disponible?',
+             Constants.stockInsuffisantLabel.replaceFirst('%s', '${product.quantity}'),
             ),
             actions: <Widget>[
               TextButton(
-                child: const Text('Annuler'),
+                child: const Text(Constants.btnNo),
                 onPressed: () {
                   Navigator.of(alertContext).pop(false);
                 },
               ),
               ElevatedButton(
-                child: const Text('Ajouter max'),
+                child: const Text(Constants.btnYes),
                 onPressed: () {
                   Navigator.of(alertContext).pop(true);
                 },

@@ -36,6 +36,10 @@ class Constants {
   static const String preventeAlertTitle = 'Imprimer le ticket de pré-vente?';
   static const String preventeReceiptLabel = 'Voulez-vous imprimer le ticket pour cette pré-vente?';
   static const String stockInsuffisantMsg ='Quantité en stock insuffisante';
+  static const String btnYes ='Oui';
+  static const String btnNo ='Non';
+  static const String stockInsuffisantLabel = 'Le stock disponible est de %s. Voulez-vous continuer quand même ?';
+  static const String inavlideNumberInputLabel = 'Veuillez saisir une quantité valide.';
 
   static void showSnack(BuildContext context, String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
