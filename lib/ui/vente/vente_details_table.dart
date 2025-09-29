@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:prestige_pos/model/client_user.dart';
-
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
-import 'package:prestige_pos/utils/constants.dart';
-import 'package:provider/provider.dart';
 import 'package:prestige_pos/model/vente/vente_detail.dart';
 import 'package:prestige_pos/provider/vente_provider.dart';
+import 'package:prestige_pos/utils/constants.dart';
+import 'package:provider/provider.dart';
 
 class VenteDetailsScreen extends StatelessWidget {
   const VenteDetailsScreen({super.key});
@@ -13,7 +12,7 @@ class VenteDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final venteProvider = Provider.of<VenteProvider>(context, listen: false);
-    return FutureBuilder<ClientUser?>(
+    return FutureBuilder<ClientUser?>( 
       future: venteProvider.getCurrentUser(),
       builder: (context, userSnapshot) {
         if (userSnapshot.connectionState == ConnectionState.waiting) {
@@ -32,7 +31,7 @@ class VenteDetailsScreen extends StatelessWidget {
 
         final canUpdatePrice =
             clientUser?.privileges?.any((p) => p.name == Constants.canUpdatePrice) ??
-            false;
+                false;
 
         return Consumer<VenteProvider>(
           builder: (context, provider, child) {
@@ -137,7 +136,6 @@ class VenteDetailsTable extends StatelessWidget {
               children: [
                 Text(
                   '${it.produitName} - ${it.produitCip}',
-
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -150,7 +148,9 @@ class VenteDetailsTable extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                  Text('${it.quantity} x ${Constants.formatNumber(it.unitPrice)} = ${Constants.formatNumber(it.amount)}',  style: const TextStyle(fontSize: 15)),
+                      Text(
+                          '${it.quantity} x ${Constants.formatNumber(it.unitPrice)} = ${Constants.formatNumber(it.amount)}',
+                          style: const TextStyle(fontSize: 15)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [

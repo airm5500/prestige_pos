@@ -119,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               )
                             else if (_officine != null)
                               Text(
-                                // TODO: The API returns 'name', but UI used 'fullName'. Using 'name' for now.
+
                                 _officine!.name,
                                 style: const TextStyle(
                                   fontSize: 16,

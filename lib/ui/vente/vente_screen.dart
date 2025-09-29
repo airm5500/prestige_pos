@@ -292,7 +292,7 @@ class _VenteTabState extends State<VenteTab> {
               children: [
                 const Text(
                   Constants.totalPayer,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 Text(
                   Constants.formatCFA(
@@ -308,9 +308,9 @@ class _VenteTabState extends State<VenteTab> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             const Divider(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             RemiseSelector(
               onSelected: (Remise remise) {
                 if (vente != null) {
@@ -322,7 +322,7 @@ class _VenteTabState extends State<VenteTab> {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             _buildActionButtons(),
           ],
         ),
