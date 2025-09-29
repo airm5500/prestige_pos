@@ -2,11 +2,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/model/client_user.dart';
+import 'package:prestige_pos/service/http_interceptor.dart';
 
 class JwtService {
+  late final http.Client _client;
+
+  JwtService() {
+    _client = InterceptedClient(http.Client());
+  }
+
   Future<String?> getToken(String username, String password) async {
     final apiClient = await ApiClient.init();
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse(apiClient.authUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',

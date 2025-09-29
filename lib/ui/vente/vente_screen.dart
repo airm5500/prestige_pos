@@ -17,7 +17,7 @@ import 'package:prestige_pos/ui/vente/search_product_widget.dart';
 import 'package:prestige_pos/ui/vente/vente_details_table.dart';
 import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
-import 'package:prestige_pos/main.dart';
+import 'package:prestige_pos/utils/navigation_service.dart';
 import 'package:prestige_pos/service/receipt_service.dart';
 
 class VenteScreen extends StatefulWidget {
@@ -354,7 +354,7 @@ class _VenteTabState extends State<VenteTab> {
                 if (currentVente != null) {
                   final isSuccess = await widget.receiptService
                       .printPreventeReceipt(
-                        context: navKey.currentContext!,
+                        context: NavigationService.navigatorKey.currentContext!,
                         currentSale: currentVente,
                       );
                   if (isSuccess) {
@@ -574,7 +574,7 @@ class _VenteTabState extends State<VenteTab> {
 
                                 if (finalyseResponse != null && mounted) {
                                   await showDialog<void>(
-                                    context: navKey.currentContext!,
+                                    context: NavigationService.navigatorKey.currentContext!,
                                     builder: (BuildContext dialogContext) {
                                       return AlertDialog(
                                         title: const Text(
@@ -588,7 +588,7 @@ class _VenteTabState extends State<VenteTab> {
                                             child: const Text(Constants.btnNon),
                                             onPressed: () {
                                               venteProvider.createNewVente();
-                                              navKey.currentState?.pop();
+                                              NavigationService.navigatorKey.currentState?.pop();
                                             },
                                           ),
                                           ElevatedButton(
@@ -599,14 +599,14 @@ class _VenteTabState extends State<VenteTab> {
                                               final isSuccess = await widget
                                                   .receiptService
                                                   .printTicket(
-                                                    navKey.currentContext!,
+                                                    NavigationService.navigatorKey.currentContext!,
                                                     currentVente,
                                                     selectedMode!,
                                                   );
                                               if (isSuccess) {
                                                 venteProvider.createNewVente();
                                               }
-                                              navKey.currentState?.pop();
+                                              NavigationService.navigatorKey.currentState?.pop();
                                             },
                                           ),
                                         ],

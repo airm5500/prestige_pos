@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 import 'package:prestige_pos/auth/service/api_client.dart';
@@ -19,10 +17,12 @@ import 'package:prestige_pos/service/remise_service.dart';
 import 'package:prestige_pos/service/vente_data_service.dart';
 import 'package:prestige_pos/service/vente_service.dart';
 import 'package:prestige_pos/ui/home_screen.dart';
+import 'package:prestige_pos/ui/login/login_screen.dart';
 import 'package:prestige_pos/ui/settings/setting_screen.dart';
 import 'package:prestige_pos/ui/splash_screen.dart';
 import 'package:prestige_pos/ui/vente/vente_screen.dart';
 import 'package:prestige_pos/utils/constants.dart';
+import 'package:prestige_pos/utils/navigation_service.dart';
 
 import 'package:provider/provider.dart';
 
@@ -87,8 +87,6 @@ void main() async {
   );
 }
 
-final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
-
 /*void showSnack(BuildContext context, String msg) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));*/
 
@@ -102,7 +100,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           title: Constants.title,
-          navigatorKey: navKey,
+          navigatorKey: NavigationService.navigatorKey,
           debugShowCheckedModeBanner: false,
 
           // theme: themeProvider.lightTheme,
@@ -120,6 +118,7 @@ class MyApp extends StatelessWidget {
           routes: {
             '/': (context) => const SplashScreen(),
             HomeScreen.routeName: (context) => const HomeScreen(),
+            LoginScreen.routeName: (context) => const LoginScreen(),
             VenteScreen.routeName: (context) =>
                 VenteScreen(receiptService: context.read<ReceiptService>()),
             SettingsScreen.routeName: (context) => const SettingsScreen(),

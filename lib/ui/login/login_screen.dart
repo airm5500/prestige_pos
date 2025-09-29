@@ -8,6 +8,7 @@ import 'package:prestige_pos/utils/constants.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
+  static const routeName = '/login';
   const LoginScreen({super.key});
 
   @override

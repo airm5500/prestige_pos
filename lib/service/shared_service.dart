@@ -3,11 +3,15 @@ import 'package:http/http.dart' as http;
 import 'package:prestige_pos/auth/service/api_client.dart';
 import 'package:prestige_pos/model/api_response.dart';
 import 'package:prestige_pos/model/error/problem_detail.dart';
+import 'package:prestige_pos/service/http_interceptor.dart';
 
 class SharedService {
   late final ApiClient _apiClient;
+  late final http.Client _client;
 
-  SharedService({required ApiClient apiClient}) : _apiClient = apiClient;
+  SharedService({required ApiClient apiClient}) : _apiClient = apiClient {
+    _client = InterceptedClient(http.Client());
+  }
 
   Future<ApiResponse<List<T>>> getData<T>({
     required String endpoint,
@@ -22,7 +26,7 @@ class SharedService {
             : null,
       );
 
-      final http.Response response = await http
+      final http.Response response = await _client
           .get(uri, headers: _apiClient.headers)
           .timeout(const Duration(seconds: 20));
 
@@ -60,7 +64,7 @@ class SharedService {
   }) async {
     try {
       final uri = Uri.parse('${_apiClient.getApiUrl()}$endpoint');
-      final response = await http
+      final response = await _client
           .post(uri, headers: _apiClient.headers, body: json.encode(body))
           .timeout(const Duration(seconds: 20));
 
@@ -92,11 +96,6 @@ class SharedService {
         final decoded = json.decode(decodedBody);
         final ProblemDetail detail = ProblemDetail.fromJson(decoded);
         return ApiResponse.withProblemDetail(detail);
-      case 401:
-      case 403:
-        return ApiResponse.error(
-          'Non autorisé. Veuillez vérifier vos identifiants.',
-        );
       case 404:
         return ApiResponse.error('Ressource non trouvée.');
       default:
@@ -123,7 +122,7 @@ class SharedService {
             : null,
       );
 
-      final response = await http
+      final response = await _client
           .delete(uri, headers: _apiClient.headers)
           .timeout(const Duration(seconds: 20));
 
@@ -154,7 +153,7 @@ class SharedService {
             : null,
       );
 
-      final http.Response response = await http
+      final http.Response response = await _client
           .get(uri, headers: _apiClient.headers)
           .timeout(const Duration(seconds: 20));
 
