@@ -231,7 +231,7 @@ class VenteDetailsTable extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  width: 80,
+                  width: 100,
                   child: Text(
                     'Actions',
                     style: TextStyle(fontWeight: FontWeight.bold),
@@ -265,7 +265,7 @@ class VenteDetailsTable extends StatelessWidget {
                     child: Text(Constants.formatNumber(it.amount)),
                   ),
                   SizedBox(
-                    width: 80,
+                    width: 100,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [

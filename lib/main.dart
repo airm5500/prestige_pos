@@ -59,8 +59,6 @@ void main() async {
           create: (_) => VenteDataService(apiClient: apiClient),
         ),
 
-
-
         ChangeNotifierProvider<VenteProvider>(
           create: (context) =>
               VenteProvider(venteService: context.read<VenteService>()),
@@ -87,10 +85,7 @@ void main() async {
   );
 }
 
-/*void showSnack(BuildContext context, String msg) =>
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));*/
 
-// ======= App =======
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prestige_pos/provider/mode_reglement_provider.dart';
 import 'package:prestige_pos/model/vente/add_vente_item.dart';
 import 'package:prestige_pos/model/vente/cloture_vente.dart';
 import 'package:prestige_pos/model/vente/create_response.dart';
@@ -10,7 +11,6 @@ import 'package:prestige_pos/model/vente/vente.dart';
 import 'package:prestige_pos/model/vente/vente_detail.dart';
 import 'package:prestige_pos/model/vente/vente_detail_wrapper.dart';
 import 'package:prestige_pos/provider/vente_provider.dart';
-import 'package:prestige_pos/ui/vente/mode_reglement_selector.dart';
 import 'package:prestige_pos/ui/vente/prevente_list_tab.dart';
 import 'package:prestige_pos/ui/vente/remise_selector.dart';
 import 'package:prestige_pos/ui/vente/search_product_widget.dart';
@@ -163,7 +163,7 @@ class _VenteTabState extends State<VenteTab> {
                 padding: const EdgeInsets.all(16.0),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    if (constraints.maxWidth > 800) {
+                    if (constraints.maxWidth > 600) {
                       return _buildDesktopLayout();
                     } else {
                       return _buildMobileLayout();
@@ -189,18 +189,23 @@ class _VenteTabState extends State<VenteTab> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Expanded(flex: 3, child: VenteDetailsScreen()),
-        const SizedBox(width: 16),
         Expanded(
-          flex: 2,
+          flex: 4,
           child: Column(
             children: [
               _buildControlsColumn(),
               const SizedBox(height: 16),
-              _buildSummaryAndActions(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: _buildSummaryAndActions(),
+                ),
+              ),
             ],
           ),
         ),
+        const SizedBox(width: 16),
+        const Expanded(flex: 5, child: VenteDetailsScreen()),
+
       ],
     );
   }
@@ -481,14 +486,17 @@ class _VenteTabState extends State<VenteTab> {
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text(Constants.saisirQtyLabel),
-          content: TextField(
-            controller: quantityController,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: Constants.qunatityLabel,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: TextField(
+              controller: quantityController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: Constants.qunatityLabel,
+              ),
+              onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
             ),
-            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
           ),
           actions: <Widget>[
             TextButton(
@@ -518,110 +526,149 @@ class _VenteTabState extends State<VenteTab> {
     final currentVente = venteProvider.currentVente;
     ModeReglement? selectedMode;
 
+    final modeReglementProvider = context.read<ModeReglementProvider>();
+    if (modeReglementProvider.modeReglements.isEmpty) {
+      modeReglementProvider.fetch();
+    }
+
     showModalBottomSheet(
       context: context,
       enableDrag: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 50,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ModeReglementSelector(
-                      onSelected: (ModeReglement mode) {
-                        setState(() {
-                          selectedMode = mode;
-                        });
-                      },
-                      initialValue: selectedMode,
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 50,
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text(Constants.terminerLabel),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      onPressed: selectedMode == null
-                          ? null
-                          : () async {
-                              Navigator.pop(ctx);
-                              if (currentVente != null) {
-                                venteProvider.updateSelectedModeReglement(
-                                  selectedMode!,
-                                );
-                                final ClotureVente clotureVente =
-                                    ClotureVente.newClotureVente(
-                                      currentVente,
-                                      selectedMode!.id,
-                                      null,
-                                    );
-                                final finalyseResponse = await venteProvider
-                                    .finalizeVno(clotureVente);
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Consumer<ModeReglementProvider>(
+                            builder: (context, provider, child) {
+                              if (provider.isLoading) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              if (provider.errorMessage != null && provider.errorMessage!.isNotEmpty) {
+                                return Text(provider.errorMessage!, style: const TextStyle(color: Colors.red));
+                              }
+                              if (provider.modeReglements.isEmpty) {
+                                return const Text("Aucun mode de règlement disponible");
+                              }
 
-                                if (finalyseResponse != null && mounted) {
-                                  await showDialog<void>(
-                                    context: NavigationService.navigatorKey.currentContext!,
-                                    builder: (BuildContext dialogContext) {
-                                      return AlertDialog(
-                                        title: const Text(
-                                          Constants.printReciptTitle,
-                                        ),
-                                        content: const Text(
-                                          Constants.printReciptMessage,
-                                        ),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            child: const Text(Constants.btnNon),
-                                            onPressed: () {
-                                              venteProvider.createNewVente();
-                                              NavigationService.navigatorKey.currentState?.pop();
-                                            },
-                                          ),
-                                          ElevatedButton(
-                                            child: const Text(
-                                              Constants.btnPrint,
-                                            ),
-                                            onPressed: () async {
-                                              final isSuccess = await widget
-                                                  .receiptService
-                                                  .printTicket(
-                                                    NavigationService.navigatorKey.currentContext!,
-                                                    currentVente,
-                                                    selectedMode!,
-                                                  );
-                                              if (isSuccess) {
-                                                venteProvider.createNewVente();
-                                              }
-                                              NavigationService.navigatorKey.currentState?.pop();
-                                            },
-                                          ),
-                                        ],
-                                      );
+                              // TODO: groupValue and onChanged are deprecated.
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: provider.modeReglements.length,
+                                itemBuilder: (context, index) {
+                                  final mode = provider.modeReglements[index];
+
+
+                                  return RadioListTile<ModeReglement>(
+                                    title: Text(mode.libelle),
+                                    selectedTileColor: Colors.green.withOpacity(0.1),
+                                    value: mode,
+                                    groupValue: selectedMode,
+                                    onChanged: (ModeReglement? value) {
+                                      setState(() {
+                                        selectedMode = value;
+                                      });
                                     },
                                   );
-                                }
-                              }
+                                },
+                              );
                             },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text(Constants.terminerLabel),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          onPressed: selectedMode == null
+                              ? null
+                              : () async {
+                                  Navigator.pop(ctx);
+                                  if (currentVente != null) {
+                                    venteProvider.updateSelectedModeReglement(
+                                      selectedMode!,
+                                    );
+                                    final ClotureVente clotureVente =
+                                        ClotureVente.newClotureVente(
+                                          currentVente,
+                                          selectedMode!.id,
+                                          null,
+                                        );
+                                    final finalyseResponse = await venteProvider
+                                        .finalizeVno(clotureVente);
+
+                                    if (finalyseResponse != null && mounted) {
+                                      await showDialog<void>(
+                                        context: NavigationService.navigatorKey.currentContext!,
+                                        builder: (BuildContext dialogContext) {
+                                          return AlertDialog(
+                                            title: const Text(
+                                              Constants.printReciptTitle,
+                                            ),
+                                            content: const Text(
+                                              Constants.printReciptMessage,
+                                            ),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                child: const Text(Constants.btnNon),
+                                                onPressed: () {
+                                                  venteProvider.createNewVente();
+                                                  NavigationService.navigatorKey.currentState?.pop();
+                                                },
+                                              ),
+                                              ElevatedButton(
+                                                child: const Text(
+                                                  Constants.btnPrint,
+                                                ),
+                                                onPressed: () async {
+                                                  final isSuccess = await widget
+                                                      .receiptService
+                                                      .printTicket(
+                                                        NavigationService.navigatorKey.currentContext!,
+                                                        currentVente,
+                                                        selectedMode!,
+                                                      );
+                                                  if (isSuccess) {
+                                                    venteProvider.createNewVente();
+                                                  }
+                                                  NavigationService.navigatorKey.currentState?.pop();
+                                                },
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    }
+                                  }
+                                },
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
     );
