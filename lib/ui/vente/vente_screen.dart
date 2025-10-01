@@ -469,7 +469,7 @@ class _VenteTabState extends State<VenteTab> {
       if (!mounted) return;
 
       if (confirmed == true) {
-        _submitQuantity(product, product.quantity.toString());
+        _submitQuantity(product, requestedQuantity.toString());
       }
     } else {
       _submitQuantity(product, value);
